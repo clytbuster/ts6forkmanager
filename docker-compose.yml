@@ -58,11 +58,7 @@ services:
       volume-init:
         condition: service_completed_successfully
     networks:
-      br0:
-        ipv4_address: 192.168.1.234
-    dns:
-      - 192.168.1.1
-    mac_address: 4e:14:0d:08:72:41
+      - ts6-network
 
   sidecar:
     build:
@@ -93,11 +89,7 @@ services:
       volume-init:
         condition: service_completed_successfully
     networks:
-      br0:
-        ipv4_address: 192.168.1.232
-    dns:
-      - 192.168.1.1
-    mac_address: 9e:bc:3c:0d:33:fa
+      - ts6-network
 
   frontend:
     build:
@@ -112,11 +104,7 @@ services:
     depends_on:
       - backend
     networks:
-      br0:
-        ipv4_address: 192.168.1.233
-    dns:
-      - 192.168.1.1
-    mac_address: f6:f3:6c:67:98:f5
+      - ts6-network
 
 volumes:
   backend-data:
@@ -125,5 +113,6 @@ volumes:
     driver: local
 
 networks:
-  br0:
+  ts6-network:
+    driver: bridge
     external: true
