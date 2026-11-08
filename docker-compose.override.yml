@@ -1,0 +1,23 @@
+services:
+  backend:
+    networks: !override
+      br0:
+        ipv4_address: 192.168.1.234
+    dns: [192.168.1.1]
+    mac_address: 4e:14:0d:08:72:41
+  sidecar:
+    networks: !override
+      br0:
+        ipv4_address: 192.168.1.232
+    dns: [192.168.1.1]
+    mac_address: 9e:bc:3c:0d:33:fa
+  frontend:
+    networks: !override
+      br0:
+        ipv4_address: 192.168.1.233
+    dns: [192.168.1.1]
+    mac_address: f6:f3:6c:67:98:f5
+
+networks:
+  br0:
+    external: true
