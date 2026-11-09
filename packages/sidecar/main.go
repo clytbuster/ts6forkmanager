@@ -43,6 +43,15 @@ func getStunServers() []string {
 	return defaultStunServers
 }
 
+// iceMaxBindingRequests is how many unanswered connectivity checks a candidate
+// pair gets before it counts as failed (pion's default is 7). pion runs one
+// check round per trickled remote candidate, so a TeamSpeak client that sends
+// its public candidate followed by a burst of TCP candidates used up all 7 in
+// ~0.1 s, before its own first packet opened the viewer's NAT; the pair was
+// then never checked again and the viewer stayed at "Connecting...". At the
+// regular 200 ms check interval 50 keeps a pair alive for ~10 s.
+var iceMaxBindingRequests uint16 = 50
+
 // applyAnnounceIPs adds ICE_ANNOUNCE_IPS as extra host candidates. Inside a
 // container the sidecar only sees its bridge IP, and STUN only finds the
 // router's public IP - neither reaches a viewer on the same LAN as the host,
@@ -798,6 +807,7 @@ func (s *Sidecar) CreatePeer(id string) (sdp string, err error) {
 	if err := applyAnnounceIPs(&se); err != nil {
 		return "", err
 	}
+	se.SetICEMaxBindingRequests(iceMaxBindingRequests)
 	if debugLogsEnabled() {
 		lf := logging.NewDefaultLoggerFactory()
 		lf.DefaultLogLevel = logging.LogLevelTrace
@@ -1001,12 +1011,15 @@ func (s *Sidecar) sendSenderReports(peer *Peer) {
 	}
 }
 
-func (s *Sidecar) SetAnswer(id, sdp string) error {
+// SetAnswer applies a viewer's answer. ignored is empty when it was applied;
+// otherwise it says why not (duplicate, wrong signaling state), so the
+// backend's "Stream Signaling Debug" log can show it.
+func (s *Sidecar) SetAnswer(id, sdp string) (ignored string, err error) {
 	s.peersLock.RLock()
 	peer, exists := s.peers[id]
 	s.peersLock.RUnlock()
 	if !exists {
-		return fmt.Errorf("peer %s not found", id)
+		return "", fmt.Errorf("peer %s not found", id)
 	}
 
 	peer.mu.Lock()
@@ -1016,16 +1029,16 @@ func (s *Sidecar) SetAnswer(id, sdp string) error {
 		if peer.PC.RemoteDescription().Type == webrtc.SDPTypeAnswer &&
 			peer.PC.SignalingState() == webrtc.SignalingStateStable {
 			debugf("[API] Ignoring duplicate answer for peer: %s", id)
-			return nil
+			return "duplicate answer", nil
 		}
 	}
 
-	if peer.PC.SignalingState() != webrtc.SignalingStateHaveLocalOffer {
-		debugf("[API] Ignoring answer in signaling state %s for peer: %s", peer.PC.SignalingState(), id)
-		return nil
+	if state := peer.PC.SignalingState(); state != webrtc.SignalingStateHaveLocalOffer {
+		debugf("[API] Ignoring answer in signaling state %s for peer: %s", state, id)
+		return "signaling state " + state.String(), nil
 	}
 
-	return peer.PC.SetRemoteDescription(webrtc.SessionDescription{
+	return "", peer.PC.SetRemoteDescription(webrtc.SessionDescription{
 		Type: webrtc.SDPTypeAnswer,
 		SDP:  sdp,
 	})
@@ -1304,12 +1317,17 @@ func main() {
 		}
 		debugf("[API] Setting answer for peer: %s (%d bytes)", req.ID, len(req.SDP))
 
-		if err := sidecar.SetAnswer(req.ID, req.SDP); err != nil {
+		ignored, err := sidecar.SetAnswer(req.ID, req.SDP)
+		if err != nil {
 			log.Printf("[API] SetAnswer error: %v", err)
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		resp := map[string]any{"status": "ok", "applied": ignored == ""}
+		if ignored != "" {
+			resp["reason"] = ignored
+		}
+		json.NewEncoder(w).Encode(resp)
 	})
 
 	mux.HandleFunc("POST /peer/ice", func(w http.ResponseWriter, r *http.Request) {
