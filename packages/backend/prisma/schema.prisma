@@ -227,6 +227,10 @@ model SupportCase {
   roomCid        Int?
   endedAt        DateTime?
   endReason      String?
+  // What the client and the supporters were already told (stage 3), SupportNotices as JSON.
+  notices        String?
+  // In a VIP group: waits before everyone who is not (stage 4); followed live while waiting.
+  vip            Boolean      @default(false)
   queue          SupportQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
 
   @@index([queueId, state])
@@ -312,6 +316,8 @@ model TsServerConfig {
   temporaryGroups TemporaryServerGroup[]
   temporaryGroupNotices TemporaryGroupNoticeSettings[]
   supportQueues SupportQueue[]
+  raidProtections RaidProtection[]
+  raidIncidents   RaidIncident[]
   botFlows      BotFlow[]
   botLogs       BotExecutionLog[]
   musicBots     MusicBot[]
@@ -340,6 +346,21 @@ model BotFlow {
 
   executions BotExecution[]
   variables  BotVariable[]
+}
+
+/// Every version of a shared flow template file that was imported (R16), so a later
+/// version can be compared with the one a flow came from. Kept when the flow is deleted.
+model ImportedTemplate {
+  id         Int      @id @default(autoincrement())
+  templateId String
+  version    String
+  name       String
+  /// The checked template file as JSON.
+  file       String
+  importedBy String?
+  importedAt DateTime @default(now())
+
+  @@unique([templateId, version])
 }
 
 model BotVariable {
@@ -788,6 +809,20 @@ model ServerMetricRollup {
   pingMin         Int?
   pingMax         Int?
 
+  // Voice connection quality as TeamSpeak reports it in serverinfo: packet loss
+  // (fraction 0..1, speech packets and all packets) and the average ping of the
+  // connected voice clients in milliseconds. TeamSpeak reports 0 for all of them
+  // while no voice client is connected, so those readings are not counted:
+  // qualityN is the number of readings with clients, and the averages and
+  // maxima are null when it is 0.
+  qualityN        Int      @default(0)
+  lossSpeechAvg   Float?
+  lossSpeechMax   Float?
+  lossTotalAvg    Float?
+  lossTotalMax    Float?
+  clientPingAvg   Float?
+  clientPingMax   Float?
+
   @@index([serverConfigId, virtualServerId, measuredAt])
 }
 
@@ -849,12 +884,63 @@ model ConnectionJournalEntry {
   // "unknown" when the end was not seen, "recording-stopped" when the journal stopped
   // watching this server while the client was on it.
   leaveReason     String?
+  // The client's server groups when it joined (comma list) and when TeamSpeak created its
+  // database entry - for raid protection's exemptions and new-identity rule (R15).
+  servergroups    String?
+  clientCreated   DateTime?
 
   @@index([at])
   @@index([ip, at])
   @@index([source, at])
   @@index([source, serverConfigId, virtualServerId, leftAt])
   @@index([country])
+  @@index([serverConfigId, virtualServerId, uid])
+}
+
+// Raid protection of one virtual server (R15): off until an admin switches it on.
+model RaidProtection {
+  id             Int            @id @default(autoincrement())
+  serverConfigId Int
+  sid            Int
+  enabled        Boolean        @default(false)
+  // RaidSettings in common, as JSON.
+  settings       String
+  // The first switch-on starts the observe-only time (observeUntil).
+  firstEnabledAt DateTime?
+  observeUntil   DateTime?
+  // Stage 3: carry out the rules' actions (an admin switches it on, an emergency stop off).
+  acting         Boolean        @default(false)
+  actingSince    DateTime?
+  stoppedAt      DateTime?
+  stoppedBy      String?
+  updatedAt      DateTime       @updatedAt
+  serverConfig   TsServerConfig @relation(fields: [serverConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([serverConfigId, sid])
+}
+
+// One spike of joins that fired at least one rule; open while rules keep firing.
+model RaidIncident {
+  id             Int            @id @default(autoincrement())
+  serverConfigId Int
+  sid            Int
+  // "open" | "closed"
+  state          String         @default("open")
+  // "observe" (nothing done, clients carry what would have happened) | "act" (actions carried out)
+  mode           String         @default("observe")
+  startedAt      DateTime
+  lastHitAt      DateTime
+  endedAt        DateTime?
+  // RaidHit[] and RaidClient[] as JSON; clientCount goes on beyond the kept clients.
+  hits           String
+  clients        String
+  clientCount    Int
+  // RaidNotice as JSON, null while none was sent.
+  notice         String?
+  serverConfig   TsServerConfig @relation(fields: [serverConfigId], references: [id], onDelete: Cascade)
+
+  @@index([serverConfigId, sid, startedAt])
+  @@index([state])
 }
 
 // An address the web interface turns away: every request from it (the whole API and the

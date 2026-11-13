@@ -2,6 +2,9 @@ import type { PrismaClient, SupportCase, SupportQueue } from '../generated/prism
 import {
   SUPPORT_OPEN_STATES,
   SUPPORT_PAUSE_NOTES,
+  SUPPORT_RETENTION_DEFAULT_DAYS,
+  SUPPORT_RETENTION_MAX_DAYS,
+  SUPPORT_RETENTION_MIN_DAYS,
   SUPPORT_QUEUE_DEFAULTS,
   supportSettingsProblem,
   type SupportCaseEntry,
@@ -14,6 +17,7 @@ import {
 } from '@ts6/common';
 import type { ConnectionPool } from '../ts-client/connection-pool.js';
 import { ConnectionUnavailableError } from '../middleware/error-handler.js';
+import { NOTICES_PER_PASS, byQueueOrder, processQueueNotices } from './support-queue-notices.js';
 
 // Support queue (R14). TeamSpeak has no queue, so the manager keeps one per waiting channel: every few
 // seconds it reads the client list and moves each case along (reconcile, a pure function), so a restart
@@ -64,6 +68,10 @@ export function isAvailableSupporter(c: ListedClient, s: SupportQueueSettings): 
   return isSupporter(c, s) && !s.afkChannelIds.includes(c.cid) && !c.away;
 }
 
+export function isVip(c: ListedClient, s: SupportQueueSettings): boolean {
+  return c.groups.some((g) => s.vipGroupIds.includes(g));
+}
+
 const person = (c: ListedClient): SupportPerson => ({ uid: c.uid, nickname: c.nickname, cldbid: c.cldbid });
 
 // --- Reconcile ------------------------------------------------------------------------------
@@ -75,10 +83,11 @@ export interface OpenCase {
   nickname: string;
   state: SupportCaseState;
   absentSince: number | null;
+  vip: boolean;
 }
 
 export type CaseChange =
-  | { kind: 'create'; uid: string; cldbid: number; nickname: string; arrivalUnknown: boolean }
+  | { kind: 'create'; uid: string; cldbid: number; nickname: string; arrivalUnknown: boolean; vip: boolean }
   | { kind: 'update'; id: number; from: SupportCaseState; data: CaseUpdate };
 
 export interface CaseUpdate {
@@ -86,6 +95,7 @@ export interface CaseUpdate {
   absentSince?: number | null;
   nickname?: string;
   cldbid?: number;
+  vip?: boolean;
   takenAt?: number;
   takenBy?: SupportPerson[];
   takenVia?: 'teamspeak';
@@ -131,6 +141,8 @@ export function reconcile(input: ReconcileInput): CaseChange[] {
     open.add(k.clientUid);
     const c = byUid.get(k.clientUid);
     const seen: CaseUpdate = c && (c.nickname !== k.nickname || c.cldbid !== k.cldbid) ? { nickname: c.nickname, cldbid: c.cldbid } : {};
+    // A VIP group given or taken while waiting moves the case at once; once taken the flag stays as it was.
+    if (c && k.state === 'waiting' && isVip(c, s) !== k.vip) seen.vip = !k.vip;
     const present = (): CaseUpdate | null => (k.absentSince !== null ? { ...seen, absentSince: null } : Object.keys(seen).length ? seen : null);
     const absent = (reason: SupportEndReason, end: SupportCaseState): CaseUpdate | null => {
       if (k.absentSince === null) return { ...seen, absentSince: now };
@@ -153,7 +165,7 @@ export function reconcile(input: ReconcileInput): CaseChange[] {
   if (mayQueue) {
     for (const c of byUid.values()) {
       if (c.cid !== channelId || open.has(c.uid) || isSupporter(c, s)) continue;
-      changes.push({ kind: 'create', uid: c.uid, cldbid: c.cldbid, nickname: c.nickname, arrivalUnknown: input.firstLook });
+      changes.push({ kind: 'create', uid: c.uid, cldbid: c.cldbid, nickname: c.nickname, arrivalUnknown: input.firstLook, vip: isVip(c, s) });
     }
   }
   return changes;
@@ -187,16 +199,16 @@ export function toCaseEntry(row: SupportCase, position: number | null = null): S
     takenVia: row.takenVia as SupportCaseEntry['takenVia'],
     actedBy: row.actedBy,
     roomCid: row.roomCid,
+    vip: row.vip,
     endedAt: row.endedAt?.toISOString() ?? null,
     endReason: row.endReason as SupportEndReason | null,
   };
 }
 
-/** Open cases as the page lists them: the waiting ones in their order (arrival, then id), then the taken ones. */
+/** Open cases as the page lists them: the waiting ones in their order (VIPs first, then arrival), then the taken ones. */
 export function orderOpenCases(rows: SupportCase[]): SupportCaseEntry[] {
-  const byArrival = (a: SupportCase, b: SupportCase) => a.arrivedAt.getTime() - b.arrivedAt.getTime() || a.id - b.id;
-  const waiting = rows.filter((r) => r.state === 'waiting').sort(byArrival);
-  const taken = rows.filter((r) => r.state === 'in-progress').sort(byArrival);
+  const waiting = rows.filter((r) => r.state === 'waiting').sort(byQueueOrder);
+  const taken = rows.filter((r) => r.state === 'in-progress').sort(byQueueOrder);
   return [...waiting.map((r, i) => toCaseEntry(r, i + 1)), ...taken.map((r) => toCaseEntry(r))];
 }
 
@@ -213,6 +225,7 @@ function updateData(d: CaseUpdate) {
     absentSince: date(d.absentSince),
     nickname: d.nickname,
     cldbid: d.cldbid,
+    vip: d.vip,
     takenAt: date(d.takenAt),
     takenBy: d.takenBy ? JSON.stringify(d.takenBy) : undefined,
     takenVia: d.takenVia,
@@ -223,18 +236,58 @@ function updateData(d: CaseUpdate) {
 
 /**
  * Writes the changes. Each update only lands while the case is still in the state it was read in,
- * so a take-over or removal from the web UI that came in meanwhile wins.
+ * so a take-over or removal from the web UI that came in meanwhile wins. Returns the ids of the cases it took over.
  */
-export async function applyChanges(prisma: PrismaClient, queueId: number, changes: CaseChange[], now: number): Promise<void> {
+export async function applyChanges(prisma: PrismaClient, queueId: number, changes: CaseChange[], now: number): Promise<number[]> {
+  const taken: number[] = [];
   for (const ch of changes) {
     if (ch.kind === 'create') {
       // Only the job creates cases and it runs one pass at a time, so no second open case can appear in between.
       await prisma.supportCase.create({
-        data: { queueId, clientUid: ch.uid, cldbid: ch.cldbid, nickname: ch.nickname, arrivedAt: new Date(now), arrivalUnknown: ch.arrivalUnknown },
+        data: { queueId, clientUid: ch.uid, cldbid: ch.cldbid, nickname: ch.nickname, arrivedAt: new Date(now), arrivalUnknown: ch.arrivalUnknown, vip: ch.vip },
       });
     } else {
-      await prisma.supportCase.updateMany({ where: { id: ch.id, state: ch.from }, data: updateData(ch.data) });
+      const { count } = await prisma.supportCase.updateMany({ where: { id: ch.id, state: ch.from }, data: updateData(ch.data) });
+      if (count && ch.from === 'waiting' && ch.data.state === 'in-progress') taken.push(ch.id);
     }
+  }
+  return taken;
+}
+
+// --- Flow trigger "case taken" (stage 4) ---------------------------------------------------
+
+type TakenListener = (serverConfigId: number, sid: number, data: Record<string, string>) => void;
+let takenListener: TakenListener | null = null;
+
+/** The flow engine listens here; the queue never imports the engine. */
+export function onSupportCaseTaken(fn: TakenListener | null): void {
+  takenListener = fn;
+}
+
+/** The event data of a taken case (SUPPORT_TRIGGER_FIELDS), all strings. `clid`: the client's connection now, if online. */
+export function takenEventData(row: SupportCase, queue: SupportQueue, clid: number | null): Record<string, string> {
+  const people = toCaseEntry(row).takenBy;
+  return {
+    case_id: String(row.id),
+    queue_id: String(queue.id),
+    queue_name: parseSettings(queue.settings).name,
+    clid: clid === null ? '' : String(clid),
+    client_nickname: row.nickname,
+    client_unique_identifier: row.clientUid,
+    client_database_id: String(row.cldbid),
+    supporter_nicknames: people.map((p) => p.nickname).join(', '),
+    supporter_uids: people.map((p) => p.uid).join(','),
+    taken_via: row.takenVia ?? '',
+    wait_seconds: String(Math.max(0, Math.floor(((row.takenAt?.getTime() ?? Date.now()) - row.arrivedAt.getTime()) / 1000))),
+    vip: row.vip ? '1' : '0',
+  };
+}
+
+export function emitCaseTaken(queue: SupportQueue, row: SupportCase, clid: number | null): void {
+  try {
+    takenListener?.(queue.serverConfigId, queue.sid, takenEventData(row, queue, clid));
+  } catch (err: any) {
+    console.warn(`[SupportQueue] Case #${row.id}: the flow trigger failed: ${err?.message ?? err}`);
   }
 }
 
@@ -313,6 +366,8 @@ export async function processSupportQueues(prisma: PrismaClient, pool: Connectio
       }
       continue;
     }
+    // One budget per virtual server and pass for messages and pokes (TeamSpeak's flood protection).
+    const budget = { left: NOTICES_PER_PASS };
     for (const q of qs) {
       const st = liveOf(q.id);
       const firstLook = st.watchingSince === null;
@@ -327,15 +382,52 @@ export async function processSupportQueues(prisma: PrismaClient, pool: Connectio
       const changes = reconcile({
         channelId: q.channelId,
         settings,
-        cases: rows.map((r) => ({ id: r.id, clientUid: r.clientUid, cldbid: r.cldbid, nickname: r.nickname, state: r.state as SupportCaseState, absentSince: r.absentSince?.getTime() ?? null })),
+        cases: rows.map((r) => ({ id: r.id, clientUid: r.clientUid, cldbid: r.cldbid, nickname: r.nickname, state: r.state as SupportCaseState, absentSince: r.absentSince?.getTime() ?? null, vip: r.vip })),
         clients,
         now,
         watchingSince: st.watchingSince!,
         firstLook,
       });
-      await applyChanges(prisma, q.id, changes, now);
+      const taken = await applyChanges(prisma, q.id, changes, now);
+      const after = await prisma.supportCase.findMany({ where: { queueId: q.id, state: { in: OPEN } } });
+      for (const row of after.filter((r) => taken.includes(r.id))) {
+        const mine = clients.filter((c) => c.uid === row.clientUid);
+        emitCaseTaken(q, row, (mine.find((c) => c.cid !== q.channelId) ?? mine[0])?.clid ?? null);
+      }
+      try {
+        await processQueueNotices(prisma, pool.getBotClient(serverConfigId), q, settings, after, clients, clients.filter((c) => isAvailableSupporter(c, settings)), budget, now);
+      } catch (err: any) {
+        console.warn(`[SupportQueue] Notices for queue #${q.id} skipped this pass: ${err.message}`);
+      }
     }
   }
+}
+
+// --- Retention (his decision 9) -------------------------------------------------------------
+
+const KEY_RETENTION = 'support_queue_retention_days';
+const DAY_MS = 86_400_000;
+
+export function isValidSupportRetention(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= SUPPORT_RETENTION_MIN_DAYS && value <= SUPPORT_RETENTION_MAX_DAYS;
+}
+
+export async function getSupportRetentionDays(prisma: PrismaClient): Promise<number> {
+  const row = await prisma.appSetting.findUnique({ where: { key: KEY_RETENTION } });
+  const value = row ? Number(row.value) : NaN;
+  return isValidSupportRetention(value) ? value : SUPPORT_RETENTION_DEFAULT_DAYS;
+}
+
+export async function setSupportRetentionDays(prisma: PrismaClient, days: number): Promise<void> {
+  await prisma.appSetting.upsert({ where: { key: KEY_RETENTION }, create: { key: KEY_RETENTION, value: String(days) }, update: { value: String(days) } });
+}
+
+/** Removes ended cases older than the retention; open ones are never touched. */
+export async function pruneSupportCases(prisma: PrismaClient, now = Date.now()): Promise<number> {
+  const cutoff = new Date(now - (await getSupportRetentionDays(prisma)) * DAY_MS);
+  const { count } = await prisma.supportCase.deleteMany({ where: { state: { notIn: OPEN }, endedAt: { lt: cutoff } } });
+  if (count > 0) console.log(`[SupportQueue] Pruned ${count} ended case${count === 1 ? '' : 's'}`);
+  return count;
 }
 
 /** Starts the queue job: a pass right away, then every 5 s (SUPPORT_QUEUE_TICK_MS, meant for tests). */
@@ -348,12 +440,17 @@ export function startSupportQueueJob(prisma: PrismaClient, pool: ConnectionPool)
       .catch((err) => console.warn(`[SupportQueue] Pass failed: ${err.message}`))
       .finally(() => { running = null; });
   };
+  const prune = () => void pruneSupportCases(prisma).catch((err) => console.warn(`[SupportQueue] Pruning failed: ${err.message}`));
   tick();
+  prune();
   const timer = setInterval(tick, tickMs);
+  const pruneTimer = setInterval(prune, 60 * 60 * 1000);
   timer.unref?.();
+  pruneTimer.unref?.();
   return {
     async stop() {
       clearInterval(timer);
+      clearInterval(pruneTimer);
       await running;
     },
   };

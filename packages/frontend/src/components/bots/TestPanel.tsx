@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { AlertTriangle, CheckCircle2, CircleSlash, FlaskConical, History, Plus, Trash2, X, XCircle } from 'lucide-react';
-import { TS_EVENT_FIELDS, TS_EVENTS, type FlowTestEffect, type FlowTestReport, type FlowTestStep, type TSEventFields } from '@ts6/common';
+import { SUPPORT_TRIGGER_FIELDS, TS_EVENT_FIELDS, TS_EVENTS, type FlowTestEffect, type FlowTestReport, type FlowTestStep, type TSEventFields } from '@ts6/common';
 import { botsApi } from '@/api/bots.api';
 import { badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ type Row = { key: string; value: string };
 
 /** The measured fields of the event a trigger listens to (a chat command arrives as a text message); undefined: not measured. */
 function eventFields(trigger: EditorNode): TSEventFields | undefined {
+  if (trigger.type === 'trigger_support') return { main: SUPPORT_TRIGGER_FIELDS, more: [] };
   const event = trigger.type === 'trigger_command' ? TS_EVENTS.TEXT_MESSAGE : trigger.config.eventName;
   return (TS_EVENT_FIELDS as Record<string, TSEventFields | null>)[event] ?? undefined;
 }
@@ -31,6 +32,8 @@ function defaultRows(trigger: EditorNode): Row[] {
     const cmd = String(trigger.config.command || '');
     rows.find((r) => r.key === 'msg')!.value = `${cmd.startsWith('!') ? '' : trigger.config.commandPrefix || '!'}${cmd} `;
   }
+  // A support trigger bound to one queue only starts for that queue.
+  if (trigger.type === 'trigger_support' && trigger.config.queueId) rows.find((r) => r.key === 'queue_id')!.value = String(trigger.config.queueId);
   for (const [key, value] of Object.entries(trigger.config.filters || {})) {
     const row = rows.find((r) => r.key === key);
     if (row) row.value = String(value); else rows.push({ key, value: String(value) });
@@ -38,7 +41,7 @@ function defaultRows(trigger: EditorNode): Row[] {
   return rows;
 }
 
-const TRIGGER_TYPE: Record<string, string> = { trigger_event: 'event', trigger_command: 'command', trigger_webhook: 'webhook', trigger_cron: 'cron' };
+const TRIGGER_TYPE: Record<string, string> = { trigger_event: 'event', trigger_command: 'command', trigger_webhook: 'webhook', trigger_cron: 'cron', trigger_support: 'support' };
 
 /** The webhook secret, if a stored run still has it in its query, is never shown. */
 function withoutSecret(queryJson: string): string {
@@ -104,12 +107,14 @@ export function stepProblem(step: FlowTestStep): 'error' | 'warning' | null {
  * real one), run the editor's current graph as a test and read what it did, step by step.
  * Clicking a step selects its node; the editor marks the path on the canvas from `onResult`.
  */
-export function TestPanel({ botId, nodes, edges, template, onClose, onPick, onResult }: {
+export function TestPanel({ botId, nodes, edges, template, onClose, onPick, onResult, embedded }: {
   botId: number;
   nodes: EditorNode[];
   edges: unknown[];
   template?: unknown;
-  onClose: () => void;
+  onClose?: () => void;
+  /** Inside another dialog (template import): a bordered box, no close button. */
+  embedded?: boolean;
   onPick: (nodeId: string) => void;
   onResult: (report: FlowTestReport | null) => void;
 }) {
@@ -202,14 +207,18 @@ export function TestPanel({ botId, nodes, edges, template, onClose, onPick, onRe
   const empty = report?.steps.reduce((n, s) => n + s.placeholders.filter((p) => p.empty).length, 0) ?? 0;
 
   return (
-    <div className="flex w-full shrink-0 flex-col border-l border-border bg-card/50 max-md:absolute max-md:inset-0 max-md:z-40 max-md:border-l-0 max-md:bg-card md:w-96">
+    <div className={embedded
+      ? 'flex max-h-[50vh] w-full flex-col rounded-md border border-border'
+      : 'flex w-full shrink-0 flex-col border-l border-border bg-card/50 max-md:absolute max-md:inset-0 max-md:z-40 max-md:border-l-0 max-md:bg-card md:w-96'}>
       <div className="flex items-center justify-between p-3 pb-2">
         <p className="flex items-center gap-1.5 font-display text-xs font-semibold tracking-wide">
           <FlaskConical className="h-3.5 w-3.5" /> {t('pages.botEditor.test.title')}
         </p>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose} title={t('common.close')} aria-label={t('common.close')}>
-          <X className="h-3.5 w-3.5" />
-        </Button>
+        {onClose && (
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose} title={t('common.close')} aria-label={t('common.close')}>
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
@@ -244,7 +253,7 @@ export function TestPanel({ botId, nodes, edges, template, onClose, onPick, onRe
 
                 {type === 'cron' && <p className="text-muted-foreground">{t('pages.botEditor.test.cronNoData')}</p>}
 
-                {(type === 'event' || type === 'command') && (
+                {(type === 'event' || type === 'command' || type === 'support') && (
                   <div className="space-y-1">
                     {rows.map((row, i) => (
                       <div key={i} className="flex items-center gap-1">

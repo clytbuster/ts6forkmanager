@@ -19,17 +19,17 @@ It talks to TeamSpeak over the **WebQuery HTTP API**, the ServerQuery replacemen
 <summary><b>Dashboard, music bots, video streaming, bot flows and permissions</b> (click to expand)</summary>
 
 ### Dashboard
-Live users, channels, uptime, ping and bandwidth of a virtual server, with tiles each user can arrange for their own account.
+Live users, channels, uptime, ping and bandwidth of a virtual server, plus the support queue at a glance where one is running, with tiles each user can arrange for their own account.
 
 ![Dashboard](docs/dashboard.png)
 
 ### Music Bots
-Several bots per server, each with its own queue and volume, playing radio, YouTube or your own library.
+Several bots per server, each with its own queue and volume, playing radio, YouTube or your own library. A channel that is live right now (a Twitch channel, a YouTube live) plays as sound with `!play <link>` or from the web player until it is stopped or the channel goes offline; an admin can switch this off or set a time limit under Settings -> Streaming.
 
 ![Music Bots](docs/musicbots.png)
 
 ### Video Streaming
-Streams YouTube, Twitch, a direct URL or a library video into a channel over WebRTC. YouTube and Twitch videos are limited to 15 minutes by default; an admin can raise that under Settings -> Streaming (up to 240 minutes). Live streams (a Twitch channel, a YouTube live) are not supported yet and are refused with a message that says so.
+Streams YouTube, Twitch, a direct URL or a library video into a channel over WebRTC. YouTube and Twitch videos are limited to 15 minutes by default; an admin can raise that under Settings -> Streaming (up to 240 minutes). A live channel streams as sound through a music bot (see above); as a video stream it is refused with a message that says so.
 
 ![Video Streaming](docs/video-streaming.png)
 
@@ -41,6 +41,8 @@ A visual editor for automation: triggers, conditions and actions on a canvas.
 Ready-made templates, imported with one click:
 
 ![Flow Templates](docs/flow-templates.png)
+
+A flow can also be exported as a template file and imported on another manager: channels, groups and music bots become inputs that the import maps onto the new server, secrets stay behind, and the import shows what the flow can do and runs a test before the flow is switched on. A newer version of an imported template is shown as an update with the changes against the old version and against the installed flow, and is imported as a copy next to it.
 
 ### Permissions
 All five permission layers, with a side-by-side comparison that highlights the differences.
@@ -108,18 +110,21 @@ Starting from a fresh server? The wiki's [Install on Debian 13](https://github.c
 - **Behind a reverse proxy, set `TRUST_PROXY`** to the number of proxies in front of the backend: `1` (default) for the frontend container alone, `2` with a host nginx or Coolify in front. **Settings → Network** shows the right value. A wrong value makes rate limits, the Connection Journal, the Change Log and IP bans see the wrong address. See [Deployment](https://github.com/DomeNinchen/ts6forkmanager/wiki/Deployment) and, if you ever ban yourself, [Troubleshooting](https://github.com/DomeNinchen/ts6forkmanager/wiki/Troubleshooting#an-ip-ban-locked-me-out-or-does-not-catch-the-visitor).
 - **The containers run without root.** The frontend's nginx listens on port `8080` inside its container. The `volume-init` service fixes the volume ownership on every start and then exits, so `Exited (0)` for it is normal. Bind mounts need a one-time `chown -R 1000:1000`. See [Running unprivileged](https://github.com/DomeNinchen/ts6forkmanager/wiki/Deployment#running-unprivileged).
 
+- **Local changes to the stack go into `docker-compose.override.yml`**, never into `docker-compose.yml`: Compose loads the override automatically and `git pull` keeps working. `docker-compose.override.example.yml` shows one, giving each container its own LAN IP (macvlan, Unraid `br0`). See [Own LAN IPs per container](https://github.com/DomeNinchen/ts6forkmanager/wiki/Deployment#own-lan-ips-per-container).
+
 [Configuration](https://github.com/DomeNinchen/ts6forkmanager/wiki/Configuration) lists every environment variable.
 
 ## Features
 
 **Server management**
 
-- **Dashboard and statistics**: live stats, tiles each user arranges for themselves, up to a month of history, and an online count that can leave out chosen server groups and the music bots. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Dashboard)
+- **Dashboard and statistics**: live stats, tiles each user arranges for themselves, up to a month of history (users, bandwidth, ping, and the voice clients' packet loss and ping as TeamSpeak reports them), and an online count that can leave out chosen server groups and the music bots. The manager does not offer a Prometheus metrics endpoint; it can be added on request (open an issue). → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Dashboard)
 - **Channels and clients**: a drag-and-drop channel tree, bulk actions on online clients that preview what will happen and then report each client's own result, and a searchable, exportable database of every client the server has seen. → [Channels](https://github.com/DomeNinchen/ts6forkmanager/wiki/Channels), [Clients](https://github.com/DomeNinchen/ts6forkmanager/wiki/Clients), [Client Database](https://github.com/DomeNinchen/ts6forkmanager/wiki/Client-Database)
 - **Files and icons**: browse, upload and download channel files, and manage the icon pool. → [Files](https://github.com/DomeNinchen/ts6forkmanager/wiki/Files), [Icons](https://github.com/DomeNinchen/ts6forkmanager/wiki/Icons)
 - **Permissions and groups**: all five layers, offline clients included, with bulk apply, compare, a per-client overview and a "Why?" check that says whether one client can kick, ban, move, poke or message another or change their server groups, and which value decides it; server and channel groups with export/import, and server groups given until a deadline (VIP for 30 days) that the manager takes away again when it passes, also after a restart. → [Permissions](https://github.com/DomeNinchen/ts6forkmanager/wiki/Permissions), [Groups](https://github.com/DomeNinchen/ts6forkmanager/wiki/Server-and-Channel-Groups)
 - **Moderation**: bans, complaints, offline messages, privilege keys and temporary passwords. → [Moderation](https://github.com/DomeNinchen/ts6forkmanager/wiki/Moderation), [Tokens and Passwords](https://github.com/DomeNinchen/ts6forkmanager/wiki/Tokens-and-Passwords)
-- **Support queue**: whoever enters the support channel waits in a fixed order, with position and waiting time shown live; a supporter takes the next client by pulling them into their channel or with one click (a room is created for both), and recent cases show how long each waited and who helped. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Support-Queue)
+- **Raid protection**: notices when many clients join a virtual server within a short time (in total, from one network or country, with similar names or with identities the server has never seen), lists them as an incident and pokes or messages your admins; members, protected groups, supporters and bots never count, and a server restart is not mistaken for a raid. It watches first; once an admin switches it to acting it warns, restricts, kicks or briefly bans per rule, with an emergency stop. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Raid-Protection)
+- **Support queue**: whoever enters a support channel waits in a fixed order (members of VIP groups first), with position and waiting time shown live, and a server can have several queues with their own supporters (for example technical and general); a supporter takes the next client by pulling them into their channel or with one click (a room is created for both), and recent cases show how long each waited and who helped; waiting clients are told their position, supporters get a poke, and a statistics card sums up waiting times and cases per supporter and day. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Support-Queue)
 - **Virtual servers and the instance**: start, stop and create servers, edit settings, read logs, take snapshots. → [Virtual Servers and Instance](https://github.com/DomeNinchen/ts6forkmanager/wiki/Virtual-Servers-and-Instance), [Server Logs](https://github.com/DomeNinchen/ts6forkmanager/wiki/Server-Logs), [Server Maintenance](https://github.com/DomeNinchen/ts6forkmanager/wiki/Server-Maintenance)
 - **Query console**: any ServerQuery command with completion, help and a safety check for dangerous commands. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Query-Console)
 - **Connection journal**: who signed in to the web interface or joined TeamSpeak, from where, with one-click IP bans. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Connection-Journal)
@@ -130,7 +135,7 @@ Starting from a fresh server? The wiki's [Install on Debian 13](https://github.c
 
 - **Music bots**: several bots per server playing radio, YouTube, Spotify links and your own library, controlled in the browser or with chat commands such as `!play`. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Music-Bots)
 - **Video streaming**: YouTube and Twitch videos (no live streams yet), direct URLs or library videos into a channel over WebRTC, with a queue and a browser preview. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Music-Bots#video-streaming)
-- **Bot flows**: a visual automation editor with triggers from server events, schedules, webhooks and chat commands, plus ready-made templates and a test mode that shows what a flow would do with a sample event without changing anything. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Bot-Flows)
+- **Bot flows**: a visual automation editor with triggers from server events, schedules, webhooks, chat commands and the support queue, plus ready-made templates, export and import of flows as template files, and a test mode that shows what a flow would do with a sample event without changing anything. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Bot-Flows)
 - **Server widgets**: status banners for websites and forums, as a live page, SVG or PNG, with their own online-count filter. → [Wiki](https://github.com/DomeNinchen/ts6forkmanager/wiki/Widgets)
 
 **Access and appearance**

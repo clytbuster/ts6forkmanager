@@ -114,6 +114,7 @@
       "icons": "Icons",
       "complaints": "Beschwerden",
       "support": "Support-Warteschlange",
+      "raidProtection": "Raid-Schutz",
       "messages": "Nachrichten",
       "serverLogs": "Server-Logs",
       "queryConsole": "Query-Konsole",
@@ -363,7 +364,8 @@
           "label": "Messwert",
           "users": "Nutzer",
           "bandwidth": "Bandbreite",
-          "ping": "Ping"
+          "ping": "Ping",
+          "quality": "Verbindungsqualität"
         },
         "metricNoDataYetHint": "Das Backend fasst Bandbreite und Ping alle {{interval}} zu einem Wert zusammen, solange der virtuelle Server läuft und die Verbindung erreichbar ist. Das Diagramm erscheint, sobald der erste gespeichert ist.",
         "metricRecordingSince": "Aufgezeichnet seit {{time}}, ein Wert je {{interval}}",
@@ -418,6 +420,36 @@
             "timeout": "Ping-Timeout"
           },
           "note": "Gemessen wird der Aufbau einer TCP-Verbindung zum Ping-Ziel dieser Verbindung. Bleibt die Antwort aus, zählt das als Timeout: rot markiert, nie als 0 ms."
+        },
+        "quality": {
+          "chartTitle": "Verbindungsqualität der Sprach-Clients",
+          "chartAria": "Verbindungsqualität, letzte {{range}}: Paketverlust Sprache im Durchschnitt {{loss}}, Client-Ping im Durchschnitt {{ping}}",
+          "chartAriaEmpty": "Verbindungsqualität: in diesem Zeitraum keine Messwerte mit verbundenen Sprach-Clients",
+          "kpi": {
+            "current": "Zuletzt",
+            "currentPing": "Client-Ping {{value}}",
+            "noClients": "Keine Sprach-Clients verbunden",
+            "lossPeak": "Paketverlust (Spitze)",
+            "lossAverage": "Paketverlust (Durchschnitt)",
+            "lossTotal": "Alle Pakete: {{value}}",
+            "pingAverage": "Client-Ping (Durchschnitt)",
+            "pingPeak": "Spitze {{value}}"
+          },
+          "tooltip": {
+            "lossSpeech": "Paketverlust Sprache",
+            "lossSpeechMax": "Paketverlust Sprache (Spitze)",
+            "lossTotal": "Paketverlust alle Pakete",
+            "clientPing": "Client-Ping",
+            "clientPingMax": "Client-Ping (Spitze)",
+            "noClients": "Keine Sprach-Clients verbunden, TeamSpeak meldet dann keinen Wert"
+          },
+          "legend": {
+            "lossSpeech": "Paketverlust Sprache",
+            "lossPeak": "Spitze Sprache",
+            "lossTotal": "Paketverlust alle Pakete",
+            "clientPing": "Client-Ping (rechte Achse)"
+          },
+          "note": "Die Werte meldet TeamSpeak selbst: Durchschnitt über alle verbundenen Sprach-Clients, Musikbots eingeschlossen. Der Paketverlust ist links in Prozent, der Client-Ping rechts in Millisekunden. Ohne verbundene Sprach-Clients meldet TeamSpeak nichts; diese Zeit bleibt leer statt 0 %."
         },
         "recordingSince": "Aufzeichnung seit {{time}}, Messintervall {{interval}}",
         "slots": {
@@ -2149,6 +2181,14 @@
         "idleStopHint": "Wie lange ein Video-Stream ohne Zuschauer laufen darf, bevor der Bot ihn beendet - damit ein vergessener Stream nicht dauerhaft Upstream und CPU des Servers belegt. Die Zeit läuft ab dem Moment, in dem der letzte Zuschauer geht, oder ab dem Start des Streams, wenn nie jemand beigetreten ist; tritt jemand bei, beginnt sie von vorn. 0 lässt den Stream laufen, bis ihn jemand beendet. Die Vorschau in dieser Weboberfläche zählt nicht als Zuschauer.",
         "maxVideoLabel": "Längstes Video für einen Stream (Minuten)",
         "maxVideoHint": "Das längste YouTube- oder Twitch-Video, das ein Stream annimmt. Standard sind 15 Minuten; hier lässt es sich auf bis zu 240 Minuten (4 Stunden) hochsetzen. Ein längeres Video wird mit einer Meldung abgelehnt. Das Video wird vor dem Abspielen komplett heruntergeladen, ein langes braucht also eine Weile, bis es startet.",
+
+        "liveAudioLabel": "Live-Streams abspielen (Ton)",
+
+        "liveAudioHint": "Ein Musikbot spielt einen Kanal, der gerade live ist (Twitch-Kanal, YouTube-Live), mit !play oder über den Web-Player ab, nur den Ton. Streame nur Inhalte, die du weitergeben darfst.",
+
+        "liveMaxLabel": "Grenze für Live-Streams (Minuten)",
+
+        "liveMaxHint": "Ein Live-Stream läuft, bis ihn jemand stoppt oder der Kanal offline geht. Mit einer Zahl hier endet er nach so vielen Minuten; 0 heißt keine Grenze. Ist beim Bot \"Pausieren, wenn allein\" an, pausiert er außerdem, wenn niemand mehr zuhört.",
         "restoreShippedValues": "Ausgelieferte Werte wiederherstellen",
         "unsavedChanges": "Ungespeicherte Änderungen",
         "streamDefaultsSaved": "Stream-Standardwerte gespeichert",
@@ -2557,6 +2597,14 @@
       "serverVersion": "Serverversion",
       "platform": "Plattform",
       "botFlows": "Bot-Flows",
+      "supportQueue": {
+        "title": "Support",
+        "waiting": "Wartend",
+        "supporters": "Supporter",
+        "longest": "Längste Wartezeit",
+        "queue": "Warteschlange",
+        "perQueue": "Je Warteschlange"
+      },
       "tiles": {
         "customise": "Anpassen",
         "editHint": "Ordne die Kacheln per Ziehen am Griff oder mit den Pfeilen an und stelle für jede Kachel Breite und Sichtbarkeit ein. Das Layout wird in deinem Konto gespeichert und gilt auf jedem Gerät.",
@@ -2574,6 +2622,7 @@
         "width2": "2/3",
         "width3": "Ganz",
         "botFlowsHint": "Erscheint nur, wenn dieser Server Bot-Flows hat.",
+        "supportQueueHint": "Erscheint nur, wenn auf diesem virtuellen Server eine Support-Warteschlange eingeschaltet ist.",
         "saved": "Dashboard-Layout gespeichert",
         "saveFailed": "Das Layout konnte nicht gespeichert werden",
         "dnd": {
@@ -2583,6 +2632,192 @@
           "end": "{{name}} auf den Platz von {{target}} gelegt.",
           "cancel": "Verschieben abgebrochen, {{name}} bleibt an ihrem Platz."
         }
+      }
+    },
+    "raid": {
+      "acting": "Greift ein",
+      "actOn": "Eingreifen einschalten",
+      "actOff": "Nur beobachten",
+      "actingNote": "Der Raid-Schutz greift ein: Clients, die während einer Spitze beitreten, bekommen den Eingriff der Regeln, die sie erfasst haben. Mitglieder, ausgenommene Gruppen, Supporter, Bots und vorher verbundene Clients nie.",
+      "actionsDisabled": "Auf dem Server ist RAID_ACTIONS_DISABLED gesetzt: Mit keinem Client wird etwas gemacht, egal was eingestellt ist.",
+      "actionError": "TeamSpeak hat den letzten Eingriff „{{action}}“ abgelehnt ({{time}}): {{note}}. Gib der Identität, mit der der Manager handelt, das fehlende Recht.",
+      "wouldHave": "Eingreifen hätte gemacht: {{list}}",
+      "actions": {
+        "none": "Nur festhalten",
+        "warn": "Warnen",
+        "restrict": "Einschränken",
+        "kick": "Kicken",
+        "ban": "Bannen"
+      },
+      "outcomes": {
+        "pending": "wartet",
+        "running": "läuft",
+        "done": "erledigt",
+        "failed": "fehlgeschlagen",
+        "gone": "vorher weg",
+        "skipped": "ausgelassen",
+        "stopped": "gestoppt"
+      },
+      "stop": {
+        "button": "Notaus",
+        "title": "Alle Eingriffe stoppen?",
+        "description": "Der Raid-Schutz beobachtet sofort wieder nur; Eingriffe, die noch warten, werden nicht gemacht. Schon vergebene Einschränkungen und Banns bleiben, bis sie ablaufen.",
+        "last": "Letzter Notaus {{time}} durch {{user}}."
+      },
+      "actConfirm": {
+        "title": "Auf Eingreifen umschalten?",
+        "description": "Ab jetzt bekommen Clients, die während einer Spitze beitreten, die je Regel eingestellten Eingriffe.",
+        "early": "Die Beobachtungszeit läuft noch bis {{date}}. Trotzdem auf Eingreifen umschalten? Die Vorfälle der Beobachtungszeit zeigen, was passiert wäre."
+      },
+      "toasts": {
+        "actOn": "Der Raid-Schutz greift jetzt ein",
+        "actOff": "Der Raid-Schutz beobachtet jetzt nur",
+        "stopped": "Notaus: Der Raid-Schutz beobachtet nur noch"
+      },
+      "loadError": "Raid-Schutz konnte nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "off": "Raid-Schutz ist aus",
+      "offHint": "Ein Admin kann ihn für diesen virtuellen Server einschalten.",
+      "offHintAdmin": "Unter Einstellungen einschalten. Zuerst beobachtet er nur: Er hält Vorfälle fest und benachrichtigt deine Admins; eingreifen tut er erst, wenn ein Admin darauf umschaltet.",
+      "statusTitle": "Status",
+      "observeOnly": "Nur beobachten",
+      "openIncident": "Vorfall #{{id}} läuft",
+      "detection": {
+        "live": "Live",
+        "delayed": "Verzögert",
+        "journal-off": "Sieht nichts",
+        "unreachable": "Server nicht erreichbar"
+      },
+      "detectionHint": {
+        "live": "Beitritte kommen sofort über die SSH-Query-Verbindung.",
+        "delayed": "Ohne SSH-Login wird die Clientliste alle 15 Sekunden gelesen: Eine Spitze fällt bis zu 15 Sekunden später auf, und wer dazwischen kommt und geht, wird nicht gesehen.",
+        "journal-off": "Der Raid-Schutz liest die Beitritte aus dem Verbindungsprotokoll, und das zeichnet diese Verbindung nicht auf.",
+        "unreachable": "Das Verbindungsprotokoll kann diesen virtuellen Server gerade nicht lesen. Bis es wieder geht, wird nichts beurteilt."
+      },
+      "journalOff": "Schalte für diese Verbindung unter Einstellungen -> Verbindungen „Verbindungsprotokoll aufzeichnen“ ein, sonst sieht der Raid-Schutz keinen Beitritt.",
+      "paused": {
+        "server-start": "Pausiert bis {{time}}: Der TeamSpeak-Server ist erst vor Kurzem gestartet, und alle, die neu verbinden, sind kein Raid.",
+        "watching-again": "Pausiert bis {{time}}: Der Manager sieht diesen Server nach einem Neustart oder Ausfall wieder, und alles Verpasste kommt auf einmal an."
+      },
+      "observeUntil": "Beobachtungszeit bis {{date}}: Die Vorfälle zeigen, was Eingreifen getan hätte.",
+      "stageNote": "Der Raid-Schutz hält nur fest und benachrichtigt. Ein Admin kann auf Eingreifen umschalten.",
+      "incidentsTitle": "Vorfälle",
+      "noIncidents": "Noch keine Vorfälle.",
+      "states": {
+        "open": "Läuft",
+        "closed": "Vorbei"
+      },
+      "clientCount": "Clients: {{count}}",
+      "hits": {
+        "total": "{{count}} Beitritte in {{window}} s",
+        "subnet": "{{count}} aus Netz {{key}}",
+        "country": "{{count}} aus {{key}}",
+        "name": "{{count}} mit Namen wie „{{key}}“",
+        "new": "{{count}} neue Identitäten"
+      },
+      "hidden": "(ausgeblendet)",
+      "lastHit": "Letzter Regeltreffer {{time}}",
+      "ended": "vorbei {{time}}",
+      "nothingDone": "mit diesen Clients wurde nichts gemacht",
+      "clientsCaption": "Clients von Vorfall #{{id}}",
+      "columns": {
+        "action": "Eingriff",
+        "wouldAction": "Wäre",
+        "nickname": "Nickname",
+        "joined": "Beigetreten",
+        "ip": "Adresse",
+        "country": "Land",
+        "identity": "Identität"
+      },
+      "newIdentity": "Neu",
+      "seenBefore": "Schon gesehen",
+      "moreClients": "{{count}} weitere Clients gezählt, aber nicht aufgelistet.",
+      "notice": {
+        "none": "Niemand wurde benachrichtigt (Benachrichtigung aus).",
+        "nobody": "Niemand wurde benachrichtigt: {{note}}",
+        "poke": "{{sent}} Admin(s) angestupst.",
+        "message": "Privatnachricht an {{sent}} Admin(s) gesendet.",
+        "failed": "{{count}} fehlgeschlagen: {{note}}",
+        "notes": {
+          "nobodyOnline": "niemand aus den Benachrichtigungsgruppen war online",
+          "noClientList": "die Clientliste konnte nicht gelesen werden ({{detail}})"
+        }
+      },
+      "presets": {
+        "lax": "Locker",
+        "medium": "Mittel",
+        "strict": "Streng",
+        "custom": "Eigene Werte"
+      },
+      "rules": {
+        "total": "Alle Beitritte",
+        "totalHint": "Beitritte insgesamt, egal wer.",
+        "subnet": "Gleiches Netz",
+        "subnetHint": "Beitritte aus einem IPv4-/24- bzw. IPv6-/64-Netz.",
+        "country": "Gleiches Land",
+        "countryHint": "Beitritte aus einem Land (braucht die GeoIP-Datenbank des Verbindungsprotokolls).",
+        "name": "Ähnliche Namen",
+        "nameHint": "Nicknames, die ohne Ziffern, Satzzeichen und Groß/Klein gleich sind („Raider12“, „raider_7“).",
+        "new": "Neue Identitäten",
+        "newHint": "Identitäten, die dieser virtuelle Server noch nie gesehen hat, auch als Anteil an allen gezählten Beitritten."
+      },
+      "notifyModes": {
+        "off": "Niemand",
+        "poke": "Anstupsen",
+        "message": "Privatnachricht"
+      },
+      "settings": {
+        "action": "Eingriff",
+        "actionsTitle": "Eingriffe",
+        "actionsHint": "Nur, solange auf Eingreifen umgeschaltet ist. Erfassen mehrere Regeln einen Client, gilt die höchste Stufe: nur festhalten < warnen < einschränken < kicken < bannen.",
+        "warnText": "Warnung (Privatnachricht)",
+        "restrictGroup": "Einschränkende Servergruppe",
+        "chooseGroup": "Gruppe wählen",
+        "restrictGroupHint": "Lege eine Gruppe mit wenigen Rechten an (z. B. nicht sprechen, keine Channels anlegen). Sie wird automatisch wieder entzogen, wie eine befristete Gruppe.",
+        "restrictMinutes": "Einschränken für Minuten",
+        "kickReason": "Kick-Grund",
+        "kickReasonHint": "Höchstens {{max}} Zeichen (TeamSpeak). {server} wird ersetzt.",
+        "banMinutes": "Bannen für Minuten",
+        "banMinutesHint": "Ein kurzer Bann auf die Identität, 10 bis 60 Minuten.",
+        "banReason": "Bann-Grund",
+        "banIp": "Auch die Adresse bannen",
+        "banIpHint": "Standardmäßig aus.",
+        "banIpWarning": "Ein Adress-Bann trifft alle hinter derselben Adresse: Mobilfunk, Büros, Wohnheime und Anbieter mit CGNAT teilen sich eine Adresse unter vielen Menschen. Nur nutzen, wenn du deine Nutzer kennst.",
+        "maxActionsPerMin": "Höchstens Eingriffe pro Minute",
+        "maxActionsPerMinHint": "Der Rest wartet auf die nächste Minute (Flood-Schutz von TeamSpeak).",
+        "open": "Einstellungen",
+        "title": "Raid-Schutz",
+        "description": "Für diesen virtuellen Server. Änderungen gelten sofort.",
+        "enabled": "Raid-Schutz an",
+        "enabledHint": "Beim ersten Einschalten beginnt die Beobachtungszeit.",
+        "rulesTitle": "Regeln",
+        "preset": "Voreinstellung",
+        "presetHint": "Die Voreinstellungen sind Startwerte; prüfe sie an den üblichen Beitrittszahlen deines Servers.",
+        "count": "Beitritte",
+        "windowSec": "Innerhalb Sekunden",
+        "sharePct": "Anteil in %",
+        "exemptTitle": "Wer nie zählt",
+        "exemptGroups": "Ausgenommene Servergruppen",
+        "exemptGroupsHint": "Mitglieder geschützter Gruppen, Supporter der Support-Warteschlange, Query-Clients und die Musikbots dieses Managers zählen ebenfalls nie.",
+        "knownSessions": "Bekanntes Mitglied ab Sitzungen",
+        "knownSessionsHint": "Ein Client mit mindestens so vielen früheren Sitzungen im Verbindungsprotokoll zählt nie (0 = aus).",
+        "graceMin": "Pause in Minuten",
+        "graceMinHint": "So lange nach dem Start des TeamSpeak-Servers bzw. nachdem der Manager ihn wieder sieht entsteht kein Vorfall.",
+        "observeDays": "Beobachtungstage",
+        "observeDaysHint": "Ab dem ersten Einschalten.",
+        "observeDaysSet": "Die Beobachtungszeit läuft bis {{date}} (beim ersten Einschalten festgelegt).",
+        "notifyTitle": "Benachrichtigen",
+        "notify": "Bei einem neuen Vorfall",
+        "notifyGroups": "Diese Gruppen benachrichtigen",
+        "notifyGroupsHint": "Nur Mitglieder, die gerade online sind, höchstens 10.",
+        "notifyText": "Text",
+        "pokeMax": "ein Anstupser wird auf {{max}} Zeichen gekürzt",
+        "historyTitle": "Verlauf",
+        "retention": "Vorfälle aufbewahren (Tage)",
+        "retentionHint": "Für alle virtuellen Server; laufende Vorfälle werden nie entfernt.",
+        "retentionRange": "Vorfälle aufbewahren: {{min}} bis {{max}} Tage",
+        "saved": "Raid-Schutz gespeichert",
+        "needNotifyGroup": "Wähle mindestens eine Gruppe zum Benachrichtigen."
       }
     },
     "support": {
@@ -2608,7 +2843,12 @@
       "notSetUp": "Keine Support-Warteschlange auf diesem virtuellen Server",
       "switchedOff": "Die Support-Warteschlange ist ausgeschaltet",
       "setUpHint": "Ein Administrator kann sie einrichten.",
-      "setUpHintAdmin": "Unter Einstellungen einen Wartekanal und die Supporter-Gruppen wählen.",
+      "setUpHintAdmin": "Mit Warteschlange hinzufügen einen Wartekanal und die Supporter-Gruppen wählen.",
+      "addQueue": "Warteschlange hinzufügen",
+      "queuesLabel": "Support-Warteschlangen",
+      "off": "aus",
+      "vip": "VIP",
+      "vipHint": "In einer VIP-Gruppe: wartet vor allen anderen",
       "supportersOnline_one": "{{count}} Supporter verfügbar",
       "supportersOnline_other": "{{count}} Supporter verfügbar",
       "checkedAt": "Geprüft {{time}}",
@@ -2634,6 +2874,27 @@
       "waitedAtLeast": "wartet mindestens {{time}}",
       "historyWaited": "wartete {{time}}",
       "historyWaitedAtLeast": "wartete mindestens {{time}}",
+      "stats": {
+        "title": "Auswertung",
+        "period": "Zeitraum",
+        "lastDays_one": "Letzter Tag",
+        "lastDays_other": "Letzte {{count}} Tage",
+        "empty": "Keine abgeschlossenen Fälle in diesem Zeitraum.",
+        "cases": "Fälle",
+        "taken": "Übernommen",
+        "cancelled": "Abgebrochen",
+        "avgWait": "Ø Wartezeit",
+        "scope": "Warteschlange",
+        "allQueues": "Alle Warteschlangen",
+        "vipAvgWait": "Ø Wartezeit VIP",
+        "otherAvgWait": "Ø Wartezeit übrige",
+        "maxWait": "Längste Wartezeit",
+        "perSupporter": "Pro Supporter",
+        "perDay": "Pro Tag",
+        "perDayTitle": "Pro Tag",
+        "day": "Tag",
+        "note": "Fälle, die im Zeitraum endeten, nach dem Tag ihrer Ankunft (deine Zeitzone). Wartezeiten zählen übernommene Fälle mit bekannter Ankunft; ein Fall mit mehreren Supportern zählt bei jedem."
+      },
       "absent": "weg seit {{time}}",
       "takenBy": "bei {{names}}",
       "takenByWeb": "übernommen für {{names}}",
@@ -2655,11 +2916,20 @@
         "CASE_NOT_IN_PROGRESS": "Dieser Fall ist nicht mehr in Bearbeitung.",
         "CLIENT_OFFLINE": "Der Client ist gerade nicht online.",
         "NOT_A_SUPPORTER": "Dieser Supporter ist nicht mehr verfügbar (offline, abwesend oder in einem AFK-Kanal).",
-        "CHANNEL_NOT_FOUND": "Diesen Kanal gibt es nicht mehr."
+        "CHANNEL_NOT_FOUND": "Diesen Kanal gibt es nicht mehr.",
+        "CHANNEL_IN_USE": "Dieser Kanal ist schon der Wartekanal der Warteschlange „{{queue}}“.",
+        "QUEUE_NOT_FOUND": "Diese Warteschlange gibt es nicht mehr."
       },
       "settings": {
         "open": "Einstellungen",
         "title": "Einstellungen der Support-Warteschlange",
+        "newTitle": "Neue Support-Warteschlange",
+        "name": "Name",
+        "nameHint": "Steht auf den Reitern, im Dashboard und in Flows, zum Beispiel Technik oder Allgemein.",
+        "delete": "Warteschlange löschen",
+        "deleteTitle": "„{{queue}}“ löschen?",
+        "deleteDescription": "Die Warteschlange und alle ihre Fälle, offene und beendete, werden gelöscht, und mit ihnen ihre Auswertung. Wartende Clients bleiben im Kanal.",
+        "deleted": "Warteschlange „{{queue}}“ gelöscht",
         "description": "Wer den Wartekanal betritt, wird der Reihe nach eingereiht. Ein Fall ist übernommen, wenn ein Supporter den Client in seinen Kanal holt, oder hier über Übernehmen.",
         "conflictTitle": "Ein Bot-Flow reagiert auf denselben Kanal",
         "conflictText": "{{flows}} behandelt ebenfalls Clients, die diesen Kanal betreten. Beide würden denselben Client bearbeiten; den Flow ausschalten oder einen anderen Kanal nehmen.",
@@ -2668,6 +2938,8 @@
         "chooseChannel": "Kanal wählen",
         "channelHint": "Ein anderer Kanal oder das Ausschalten beendet die offenen Fälle.",
         "groups": "Supporter-Gruppen",
+        "vipGroups": "VIP-Gruppen",
+        "vipGroupsHint": "Mitglieder warten vor allen, die in keiner dieser Gruppen sind; untereinander nach Ankunft.",
         "afk": "AFK-Kanäle (Supporter dort zählen nicht)",
         "grace": "Karenzzeit (Sekunden)",
         "graceHint": "So lange darf ein Client weg sein (getrennt, anderer Kanal) und behält seinen Platz.",
@@ -2683,6 +2955,27 @@
         },
         "needChannel": "Einen Wartekanal wählen.",
         "needGroup": "Mindestens eine Supporter-Gruppe wählen.",
+        "messagesTitle": "Nachrichten",
+        "clientMessages": "Privatnachrichten an Wartende",
+        "clientMessagesHint": "Beim Eintritt (mit Platz) und wenn ein Supporter übernimmt.",
+        "enterText": "Beim Eintritt",
+        "noSupporterText": "Beim Eintritt, wenn kein Supporter verfügbar ist",
+        "estimateText": "Übliche Wartezeit (füllt {estimate})",
+        "estimateHint": "{minutes} ist die übliche Wartezeit; wird ab 10 übernommenen Fällen angefügt. Leer lassen, um sie nie anzufügen.",
+        "takenText": "Bei Übernahme",
+        "repeatMin": "Platz alle … Minuten wiederholen",
+        "repeatHint": "0 = nie.",
+        "pokeSupporters": "Supporter bei jedem neuen Wartenden anstupsen",
+        "pokeHint": "Nur verfügbare Supporter (nicht abwesend, nicht in einem AFK-Kanal). Anstupser werden nach 100 Zeichen abgeschnitten.",
+        "supporterPokeText": "Text zum Anstupsen",
+        "remind": "Supporter erinnern, wenn jemand zu lange wartet",
+        "remindHint": "Ein weiterer Anstupser pro Wartendem.",
+        "remindAfterMin": "Nach … Minuten",
+        "remindText": "Text der Erinnerung",
+        "historyTitle": "Verlauf",
+        "retention": "Abgeschlossene Fälle … Tage aufbewahren",
+        "retentionHint": "Gilt für alle virtuellen Server.",
+        "retentionRange": "Zwischen {{min}} und {{max}} Tagen.",
         "saved": "Support-Warteschlange gespeichert"
       }
     },
@@ -3130,6 +3423,7 @@
         "trigger_cron": "Cron-Timer",
         "trigger_webhook": "Webhook",
         "trigger_command": "Chat-Befehl",
+        "trigger_support": "Support-Fall übernommen",
         "action_message": "Nachricht senden",
         "action_poke": "Client anstupsen",
         "action_kick": "Client kicken",
@@ -3157,6 +3451,7 @@
         "action_pokeGroup": "Gruppe anstupsen",
         "action_rankCheck": "Rang-Prüfung",
         "action_tempChannelCleanup": "Temp-Bereinigung",
+        "action_supportEnqueue": "In Warteschlange einreihen",
         "action_animatedChannel": "Animierter Channel",
         "condition": "Bedingung",
         "loop": "Schleife",
@@ -3223,6 +3518,14 @@
       "connections": "VERBINDUNGEN",
       "noConnections": "Keine Verbindungen",
       "config": {
+        "support": {
+          "queueLabel": "Support-Warteschlange",
+          "chooseQueue": "Warteschlange wählen",
+          "anyQueue": "Jede Warteschlange dieses virtuellen Servers",
+          "noQueue": "Dieser virtuelle Server hat noch keine Support-Warteschlange (Seite Support-Warteschlange).",
+          "triggerHint": "Startet, wenn ein Supporter einen wartenden Client übernimmt, in TeamSpeak oder mit Übernehmen in der Weboberfläche. Braucht kein SSH. Das Ereignis enthält:",
+          "enqueueHint": "Verschiebt den auslösenden Client (event.clid) in den Wartekanal der Warteschlange; sie reiht ihn innerhalb weniger Sekunden ein, wie jeden, der den Kanal betritt. Wird mit einer Warnung im Log übersprungen, wenn die Warteschlange aus ist, der Client einer ihrer Supporter ist oder niemand eingereiht wird, solange kein Supporter verfügbar ist."
+        },
         "shared": {
           "commandLabel": "Befehl",
           "channelIdLabel": "Channel-ID",
@@ -4060,6 +4363,97 @@
     }
   },
   "components": {
+    "flowTemplates": {
+      "import": "Importieren",
+      "importTitle": "Ablauf-Vorlage importieren",
+      "importHint": "Lädt eine Vorlagendatei (.ts6flow.json) und legt daraus einen neuen Ablauf auf dem gewählten Server an.",
+      "file": "Vorlagendatei",
+      "invalid": "{{file}} ist keine gültige Vorlage:",
+      "byAuthor": "Von {{author}}",
+      "summary": "{{nodes}} Knoten, {{inputs}} Eingaben",
+      "importDisabledNote": "Der Ablauf wird ausgeschaltet angelegt. Danach testest du ihn einmal; das erste Einschalten darf nur ein Admin.",
+      "secretsToEnter": "Diese Geheimnisse sind leer und müssen im Editor neu eingetragen werden:",
+      "imported": "Ablauf \"{{name}}\" importiert (ausgeschaltet)",
+      "importFailed": "Import fehlgeschlagen",
+      "steps": {
+        "file": "Datei",
+        "map": "Zuordnen",
+        "test": "Testen"
+      },
+      "stepOf": "Schritt {{step}} von 3: {{name}}",
+      "capabilitiesTitle": "Dieser Ablauf kann:",
+      "capabilitiesNone": "Nichts auf dem Server ändern und nichts nach außen senden.",
+      "capabilities": {
+        "kick": "Clients kicken",
+        "ban": "Clients bannen",
+        "move": "Clients verschieben",
+        "poke": "Clients anstupsen",
+        "message": "Nachrichten senden",
+        "groups": "Servergruppen vergeben und entziehen",
+        "channels": "Kanäle anlegen, ändern oder löschen",
+        "serverquery": "ServerQuery-Befehle ausführen: {{details}}",
+        "http": "HTTP-Anfragen senden an: {{details}}",
+        "webhookTrigger": "Von außen per Webhook gestartet werden",
+        "voice": "Musikbots steuern",
+        "supportQueue": "Clients in die Support-Warteschlange setzen"
+      },
+      "mapHint": "Wähle für jede Stelle das passende Objekt dieses Servers. Gleichnamige Objekte sind vorausgewählt.",
+      "types": {
+        "channel": "Kanal",
+        "servergroup": "Servergruppe",
+        "channelgroup": "Kanalgruppe",
+        "bot": "Musikbot"
+      },
+      "choose": "Auswählen",
+      "originalNames": "Im Original: {{names}}",
+      "originalId": "Im Original: ID {{id}} (Name unbekannt)",
+      "noObjects": "Auf diesem Server gibt es keine passenden Objekte.",
+      "optional": "optional",
+      "missingCount": "{{count}} Pflichtangabe(n) fehlen noch.",
+      "testHint": "Der Ablauf ist angelegt und ausgeschaltet. Teste ihn einmal, bevor du ihn einschaltest; der Test ändert nichts.",
+      "enable": "Einschalten",
+      "keepDisabled": "Ausgeschaltet lassen",
+      "testFirst": "Einschalten geht nach einem Testlauf.",
+      "enabled": "Ablauf \"{{name}}\" ist eingeschaltet",
+      "enableFailed": "Einschalten fehlgeschlagen",
+      "updateTitle": "Update eines installierten Ablaufs",
+      "updateBasis": "Installierter Ablauf zum Vergleich",
+      "updateOf": "„{{flow}}“ läuft auf diesem Server in Version {{from}}, diese Datei ist Version {{to}}.",
+      "updateRelation": {
+        "same": "Diese Version ist bereits installiert.",
+        "older": "Diese Datei ist älter als die installierte Version."
+      },
+      "updateMajor": "Neue Hauptversion: Die Eingaben haben sich geändert und müssen neu zugeordnet werden.",
+      "updateNewCapabilities": "Die neue Version kann zusätzlich",
+      "diffPrevious": "Änderungen seit Version {{version}}",
+      "diffPreviousUnknown": "Version {{version}} wurde importiert, bevor Versionen gespeichert wurden. Gezeigt wird nur der Vergleich mit dem installierten Ablauf.",
+      "diffLocal": "Verglichen mit „{{flow}}“ im jetzigen Stand",
+      "diffSummary": "{{added}} neu, {{removed}} entfernt, {{changed}} geändert",
+      "diffHeading": "{{title}}: {{summary}}",
+      "diffNone": "keine Unterschiede",
+      "diffAdded": "Neu: {{name}}",
+      "diffRemoved": "Entfernt: {{name}}",
+      "diffChanged": "Geändert: {{name}}",
+      "diffEdges": "Verbindungen: {{added}} neu, {{removed}} entfernt",
+      "updateCopyNote": "Das Update wird als neuer, ausgeschalteter Ablauf importiert. „{{flow}}“ bleibt unverändert; du kannst ihn löschen, sobald der neue läuft.",
+      "updateCheckFailed": "Ob eine frühere Version installiert ist, ließ sich nicht prüfen; die Datei wird als neuer Ablauf importiert.",
+      "exportTitle": "Als Vorlage exportieren",
+      "exportHint": "Speichert diesen Ablauf als Vorlagendatei, die ein anderer Manager importieren kann. Kanäle, Gruppen und Bots werden zu Eingaben, Geheimnisse werden entfernt.",
+      "exportFailed": "Export fehlgeschlagen",
+      "id": "Vorlagen-ID",
+      "version": "Version",
+      "author": "Autor (optional)",
+      "download": "Herunterladen",
+      "secretsRemoved": "Diese Geheimnisse werden nicht mitgespeichert:",
+      "warningsTitle": "Diese Stellen können noch Kanäle oder Gruppen dieses Servers enthalten und werden beim Import nicht zugeordnet:",
+      "reasons": {
+        "expression": "Bedingung",
+        "event-filter": "Ereignisfilter",
+        "webquery": "WebQuery-Befehl",
+        "rank-list": "Rangliste",
+        "support-queue": "Support-Warteschlange"
+      }
+    },
     "onlineCountFilter": {
       "title": {
         "dashboard": "Wer bei „Online“ mitzählt",

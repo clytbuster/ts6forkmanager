@@ -1087,7 +1087,7 @@
     "moderator": "403",
     "moderator (no grant)": "403"
   },
-  "GET /api/servers/:configId/vs/:sid/support-queue": {
+  "GET /api/servers/:configId/vs/:sid/support-queue/queues": {
     "admin": "ok",
     "admin (no grant)": "ok",
     "viewer": "ok",
@@ -1115,7 +1115,21 @@
     "moderator": "ok",
     "moderator (no grant)": "403"
   },
-  "GET /api/servers/:configId/vs/:sid/support-queue/config": {
+  "GET /api/servers/:configId/vs/:sid/support-queue/queues/:queueId/history": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "ok",
+    "viewer (no grant)": "403",
+    "bot-operator": "ok",
+    "bot-operator (no grant)": "403",
+    "music-operator": "ok",
+    "music-operator (no grant)": "403",
+    "server-admin": "ok",
+    "server-admin (no grant)": "403",
+    "moderator": "ok",
+    "moderator (no grant)": "403"
+  },
+  "GET /api/servers/:configId/vs/:sid/support-queue/queues/:queueId/config": {
     "admin": "ok",
     "admin (no grant)": "ok",
     "viewer": "403",
@@ -1129,7 +1143,35 @@
     "moderator": "403",
     "moderator (no grant)": "403"
   },
-  "PUT /api/servers/:configId/vs/:sid/support-queue/config": {
+  "POST /api/servers/:configId/vs/:sid/support-queue/queues": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "403",
+    "server-admin (no grant)": "403",
+    "moderator": "403",
+    "moderator (no grant)": "403"
+  },
+  "PUT /api/servers/:configId/vs/:sid/support-queue/queues/:queueId/config": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "403",
+    "server-admin (no grant)": "403",
+    "moderator": "403",
+    "moderator (no grant)": "403"
+  },
+  "DELETE /api/servers/:configId/vs/:sid/support-queue/queues/:queueId": {
     "admin": "ok",
     "admin (no grant)": "ok",
     "viewer": "403",
@@ -1172,6 +1214,90 @@
     "moderator (no grant)": "403"
   },
   "POST /api/servers/:configId/vs/:sid/support-queue/cases/:id/close": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "ok",
+    "server-admin (no grant)": "403",
+    "moderator": "ok",
+    "moderator (no grant)": "403"
+  },
+  "GET /api/servers/:configId/vs/:sid/raid-protection": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "ok",
+    "server-admin (no grant)": "403",
+    "moderator": "ok",
+    "moderator (no grant)": "403"
+  },
+  "PUT /api/servers/:configId/vs/:sid/raid-protection": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "403",
+    "server-admin (no grant)": "403",
+    "moderator": "403",
+    "moderator (no grant)": "403"
+  },
+  "POST /api/servers/:configId/vs/:sid/raid-protection/acting": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "403",
+    "server-admin (no grant)": "403",
+    "moderator": "403",
+    "moderator (no grant)": "403"
+  },
+  "POST /api/servers/:configId/vs/:sid/raid-protection/stop": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "ok",
+    "server-admin (no grant)": "403",
+    "moderator": "ok",
+    "moderator (no grant)": "403"
+  },
+  "GET /api/servers/:configId/vs/:sid/raid-protection/incidents": {
+    "admin": "ok",
+    "admin (no grant)": "ok",
+    "viewer": "403",
+    "viewer (no grant)": "403",
+    "bot-operator": "403",
+    "bot-operator (no grant)": "403",
+    "music-operator": "403",
+    "music-operator (no grant)": "403",
+    "server-admin": "ok",
+    "server-admin (no grant)": "403",
+    "moderator": "ok",
+    "moderator (no grant)": "403"
+  },
+  "GET /api/servers/:configId/vs/:sid/raid-protection/incidents/:id": {
     "admin": "ok",
     "admin (no grant)": "ok",
     "viewer": "403",
@@ -2517,6 +2643,30 @@
     "server-admin": "403",
     "moderator": "403"
   },
+  "GET /api/bots/:botId/export": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "ok",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "POST /api/bots/import/preview": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "POST /api/bots/import": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
   "POST /api/bots/:botId/test": {
     "admin": "ok",
     "viewer": "403",
@@ -3166,6 +3316,38 @@
     "moderator": "403"
   },
   "PUT /api/settings/temporary-groups": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "GET /api/settings/support-queue": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "PUT /api/settings/support-queue": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "GET /api/settings/raid-protection": {
+    "admin": "ok",
+    "viewer": "403",
+    "bot-operator": "403",
+    "music-operator": "403",
+    "server-admin": "403",
+    "moderator": "403"
+  },
+  "PUT /api/settings/raid-protection": {
     "admin": "ok",
     "viewer": "403",
     "bot-operator": "403",

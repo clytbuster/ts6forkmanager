@@ -114,6 +114,7 @@
       "icons": "Icons",
       "complaints": "Complaints",
       "support": "Support Queue",
+      "raidProtection": "Raid Protection",
       "messages": "Messages",
       "serverLogs": "Server Logs",
       "queryConsole": "Query Console",
@@ -363,7 +364,8 @@
           "label": "Metric",
           "users": "Users",
           "bandwidth": "Bandwidth",
-          "ping": "Ping"
+          "ping": "Ping",
+          "quality": "Connection quality"
         },
         "metricNoDataYetHint": "The backend rolls bandwidth and ping up into one value every {{interval}} while the virtual server is running and the connection is reachable. The chart appears as soon as the first one is saved.",
         "metricRecordingSince": "Recorded since {{time}}, one value per {{interval}}",
@@ -418,6 +420,36 @@
             "timeout": "Ping timeout"
           },
           "note": "What is measured is how long a TCP connection to this connection's ping target takes to open. No answer counts as a timeout: marked red, never counted as 0 ms."
+        },
+        "quality": {
+          "chartTitle": "Voice client connection quality",
+          "chartAria": "Connection quality, last {{range}}: average speech packet loss {{loss}}, average client ping {{ping}}",
+          "chartAriaEmpty": "Connection quality: no readings with connected voice clients in this range",
+          "kpi": {
+            "current": "Latest",
+            "currentPing": "Client ping {{value}}",
+            "noClients": "No voice clients connected",
+            "lossPeak": "Packet loss (peak)",
+            "lossAverage": "Packet loss (average)",
+            "lossTotal": "All packets: {{value}}",
+            "pingAverage": "Client ping (average)",
+            "pingPeak": "Peak {{value}}"
+          },
+          "tooltip": {
+            "lossSpeech": "Speech packet loss",
+            "lossSpeechMax": "Speech packet loss (peak)",
+            "lossTotal": "Packet loss, all packets",
+            "clientPing": "Client ping",
+            "clientPingMax": "Client ping (peak)",
+            "noClients": "No voice clients connected, so TeamSpeak reports no value"
+          },
+          "legend": {
+            "lossSpeech": "Speech packet loss",
+            "lossPeak": "Speech peak",
+            "lossTotal": "Packet loss, all packets",
+            "clientPing": "Client ping (right axis)"
+          },
+          "note": "TeamSpeak reports these values itself: the average over all connected voice clients, music bots included. Packet loss is on the left in percent, client ping on the right in milliseconds. With no voice client connected TeamSpeak reports nothing; that time stays empty instead of 0 %."
         },
         "recordingSince": "Recording since {{time}}, measured every {{interval}}",
         "slots": {
@@ -2149,6 +2181,14 @@
         "idleStopHint": "How long a video stream may run with no viewer before the bot ends it, so a forgotten stream does not keep using the server's upstream and CPU. The clock starts when the last viewer leaves, or when the stream starts if nobody ever joins; a viewer joining resets it. 0 keeps the stream running until someone stops it. The preview in this web interface does not count as a viewer.",
         "maxVideoLabel": "Longest video for a stream (minutes)",
         "maxVideoHint": "The longest YouTube or Twitch video a stream accepts. The default is 15 minutes; raise it here, up to 240 minutes (4 hours). A longer video is refused with a message. The video is downloaded in full before it plays, so a long one takes a while to start.",
+
+        "liveAudioLabel": "Play live streams (sound)",
+
+        "liveAudioHint": "A music bot plays a channel that is live right now (a Twitch channel, a YouTube live) with !play or the web player, sound only. Only stream content you are allowed to pass on.",
+
+        "liveMaxLabel": "Live stream limit (minutes)",
+
+        "liveMaxHint": "A live stream runs until someone stops it or the channel goes offline. Set a number here to end it after that many minutes; 0 means no limit. The bot also pauses when it is left alone, if that is switched on for it.",
         "restoreShippedValues": "Restore shipped values",
         "unsavedChanges": "Unsaved changes",
         "streamDefaultsSaved": "Stream defaults saved",
@@ -2557,6 +2597,14 @@
       "serverVersion": "Server Version",
       "platform": "Platform",
       "botFlows": "Bot Flows",
+      "supportQueue": {
+        "title": "Support",
+        "waiting": "Waiting",
+        "supporters": "Supporters",
+        "longest": "Longest wait",
+        "queue": "Queue",
+        "perQueue": "Per queue"
+      },
       "tiles": {
         "customise": "Customise",
         "editHint": "Drag a tile by its handle or use the arrows to change the order, and set each tile's width and visibility. The layout is saved to your account and applies on every device.",
@@ -2574,6 +2622,7 @@
         "width2": "2/3",
         "width3": "Full",
         "botFlowsHint": "Only appears when this server has bot flows.",
+        "supportQueueHint": "Only appears when this virtual server has a support queue switched on.",
         "saved": "Dashboard layout saved",
         "saveFailed": "The layout could not be saved",
         "dnd": {
@@ -2583,6 +2632,192 @@
           "end": "{{name}} dropped in the place of {{target}}.",
           "cancel": "Moving cancelled, {{name}} stays where it was."
         }
+      }
+    },
+    "raid": {
+      "acting": "Acting",
+      "actOn": "Act on raids",
+      "actOff": "Only observe",
+      "actingNote": "Raid protection acts: clients who join during a spike get the action of the rules that caught them. Members, exempt groups, supporters, bots and clients connected before never do.",
+      "actionsDisabled": "RAID_ACTIONS_DISABLED is set on the server: nothing is done to any client, whatever the settings say.",
+      "actionError": "TeamSpeak refused the last action \"{{action}}\" ({{time}}): {{note}}. Give the identity the manager acts with the missing permission.",
+      "wouldHave": "Acting would have done: {{list}}",
+      "actions": {
+        "none": "Only record",
+        "warn": "Warn",
+        "restrict": "Restrict",
+        "kick": "Kick",
+        "ban": "Ban"
+      },
+      "outcomes": {
+        "pending": "waiting",
+        "running": "running",
+        "done": "done",
+        "failed": "failed",
+        "gone": "left before",
+        "skipped": "skipped",
+        "stopped": "stopped"
+      },
+      "stop": {
+        "button": "Emergency stop",
+        "title": "Stop all actions?",
+        "description": "Raid protection goes back to observing at once; actions that still wait are not done. Restrictions and bans already given stay until they run out.",
+        "last": "Last emergency stop {{time}} by {{user}}."
+      },
+      "actConfirm": {
+        "title": "Switch to acting?",
+        "description": "From now on clients who join during a spike get the actions set per rule under Settings.",
+        "early": "The observe-only time runs until {{date}}. Switch to acting anyway? The incidents of the observe time show what would have happened."
+      },
+      "toasts": {
+        "actOn": "Raid protection acts now",
+        "actOff": "Raid protection only observes now",
+        "stopped": "Emergency stop: raid protection only observes"
+      },
+      "loadError": "Raid protection could not be loaded",
+      "retry": "Try again",
+      "off": "Raid protection is off",
+      "offHint": "An admin can switch it on for this virtual server.",
+      "offHintAdmin": "Switch it on under Settings. It starts by only watching: it records incidents and tells your admins; it acts only once an admin switches it to acting.",
+      "statusTitle": "Status",
+      "observeOnly": "Observing only",
+      "openIncident": "Incident #{{id}} running",
+      "detection": {
+        "live": "Live",
+        "delayed": "Delayed",
+        "journal-off": "Sees nothing",
+        "unreachable": "Server not reachable"
+      },
+      "detectionHint": {
+        "live": "Joins arrive at once over the SSH query connection.",
+        "delayed": "Without an SSH login the client list is read every 15 seconds: a spike is seen up to 15 seconds late, and a client who comes and goes in between is missed.",
+        "journal-off": "Raid protection reads the joins from the connection journal, and the journal does not record this connection.",
+        "unreachable": "The connection journal cannot read this virtual server right now. Nothing is judged until it can again."
+      },
+      "journalOff": "Switch on \"Record connection journal\" for this connection under Settings -> Connections, otherwise raid protection never sees a join.",
+      "paused": {
+        "server-start": "Paused until {{time}}: the TeamSpeak server started a short while ago, and everyone reconnecting is not a raid.",
+        "watching-again": "Paused until {{time}}: the manager can see this server again after a restart or an outage, and everyone it missed arrives at once."
+      },
+      "observeUntil": "Observe-only time until {{date}}: the incidents show what acting would have done.",
+      "stageNote": "Raid protection only records and notifies. An admin can switch it to acting.",
+      "incidentsTitle": "Incidents",
+      "noIncidents": "No incidents yet.",
+      "states": {
+        "open": "Running",
+        "closed": "Over"
+      },
+      "clientCount": "Clients: {{count}}",
+      "hits": {
+        "total": "{{count}} joins in {{window}} s",
+        "subnet": "{{count}} from network {{key}}",
+        "country": "{{count}} from {{key}}",
+        "name": "{{count}} named like \"{{key}}\"",
+        "new": "{{count}} new identities"
+      },
+      "hidden": "(hidden)",
+      "lastHit": "Last rule hit {{time}}",
+      "ended": "over {{time}}",
+      "nothingDone": "nothing was done to these clients",
+      "clientsCaption": "Clients of incident #{{id}}",
+      "columns": {
+        "action": "Action",
+        "wouldAction": "Would be",
+        "nickname": "Nickname",
+        "joined": "Joined",
+        "ip": "Address",
+        "country": "Country",
+        "identity": "Identity"
+      },
+      "newIdentity": "New",
+      "seenBefore": "Seen before",
+      "moreClients": "{{count}} more clients counted but not listed.",
+      "notice": {
+        "none": "Nobody was notified (notifications are off).",
+        "nobody": "Nobody was notified: {{note}}",
+        "poke": "Poked {{sent}} admin(s).",
+        "message": "Sent a private message to {{sent}} admin(s).",
+        "failed": "{{count}} failed: {{note}}",
+        "notes": {
+          "nobodyOnline": "nobody of the notify groups was online",
+          "noClientList": "the client list could not be read ({{detail}})"
+        }
+      },
+      "presets": {
+        "lax": "Lax",
+        "medium": "Medium",
+        "strict": "Strict",
+        "custom": "Own values"
+      },
+      "rules": {
+        "total": "All joins",
+        "totalHint": "Joins in total, whoever they are.",
+        "subnet": "Same network",
+        "subnetHint": "Joins from one IPv4 /24 or IPv6 /64 network.",
+        "country": "Same country",
+        "countryHint": "Joins from one country (needs the GeoIP database of the connection journal).",
+        "name": "Similar names",
+        "nameHint": "Nicknames that are the same without digits, punctuation and case (\"Raider12\", \"raider_7\").",
+        "new": "New identities",
+        "newHint": "Identities this virtual server has never seen, also as a share of all counted joins."
+      },
+      "notifyModes": {
+        "off": "Nobody",
+        "poke": "Poke",
+        "message": "Private message"
+      },
+      "settings": {
+        "action": "Action",
+        "actionsTitle": "Actions",
+        "actionsHint": "Only while switched to acting. A client caught by several rules gets the highest level: only record < warn < restrict < kick < ban.",
+        "warnText": "Warning (private message)",
+        "restrictGroup": "Restricting server group",
+        "chooseGroup": "Choose a group",
+        "restrictGroupHint": "Prepare a group with few rights (for example no talking, no channel creating). It is taken away again automatically, like a temporary group.",
+        "restrictMinutes": "Restrict for minutes",
+        "kickReason": "Kick reason",
+        "kickReasonHint": "At most {{max}} characters (TeamSpeak). {server} is filled in.",
+        "banMinutes": "Ban for minutes",
+        "banMinutesHint": "A short ban on the identity, 10 to 60 minutes.",
+        "banReason": "Ban reason",
+        "banIp": "Also ban the address",
+        "banIpHint": "Off by default.",
+        "banIpWarning": "An address ban hits everyone behind the same address: mobile networks, offices, student halls and providers with CGNAT share one address among many people. Only use it if you know your users.",
+        "maxActionsPerMin": "At most actions per minute",
+        "maxActionsPerMinHint": "The rest waits for the next minute (TeamSpeak's flood protection).",
+        "open": "Settings",
+        "title": "Raid protection",
+        "description": "For this virtual server. Changes take effect at once.",
+        "enabled": "Raid protection on",
+        "enabledHint": "The first time it is switched on, the observe-only time starts.",
+        "rulesTitle": "Rules",
+        "preset": "Preset",
+        "presetHint": "The presets are starting points; check them against how many joins your server usually has.",
+        "count": "Joins",
+        "windowSec": "Within seconds",
+        "sharePct": "Share in %",
+        "exemptTitle": "Who never counts",
+        "exemptGroups": "Exempt server groups",
+        "exemptGroupsHint": "Members of protected groups, supporters of the support queue, query clients and this manager's music bots never count either.",
+        "knownSessions": "Known member from sessions",
+        "knownSessionsHint": "A client with at least this many earlier sessions in the connection journal never counts (0 = off).",
+        "graceMin": "Pause in minutes",
+        "graceMinHint": "No incident this long after the TeamSpeak server started or the manager could see it again.",
+        "observeDays": "Observe-only days",
+        "observeDaysHint": "Counted from the first switch-on.",
+        "observeDaysSet": "Observe-only time runs until {{date}} (set at the first switch-on).",
+        "notifyTitle": "Notify",
+        "notify": "On a new incident",
+        "notifyGroups": "Notify these groups",
+        "notifyGroupsHint": "Only members who are online at that moment, at most 10.",
+        "notifyText": "Text",
+        "pokeMax": "a poke is cut to {{max}} characters",
+        "historyTitle": "History",
+        "retention": "Keep incidents (days)",
+        "retentionHint": "For every virtual server; running incidents are never removed.",
+        "retentionRange": "Keep incidents: {{min}} to {{max}} days",
+        "saved": "Raid protection saved",
+        "needNotifyGroup": "Choose at least one group to notify."
       }
     },
     "support": {
@@ -2608,7 +2843,12 @@
       "notSetUp": "No support queue on this virtual server",
       "switchedOff": "The support queue is switched off",
       "setUpHint": "An administrator can set one up.",
-      "setUpHintAdmin": "Use Settings to pick a waiting channel and the supporter groups.",
+      "setUpHintAdmin": "Use Add queue to pick a waiting channel and the supporter groups.",
+      "addQueue": "Add queue",
+      "queuesLabel": "Support queues",
+      "off": "off",
+      "vip": "VIP",
+      "vipHint": "In a VIP group: waits before everyone who is not",
       "supportersOnline_one": "{{count}} supporter available",
       "supportersOnline_other": "{{count}} supporters available",
       "checkedAt": "Checked {{time}}",
@@ -2634,6 +2874,27 @@
       "waitedAtLeast": "waiting at least {{time}}",
       "historyWaited": "waited for {{time}}",
       "historyWaitedAtLeast": "waited at least {{time}}",
+      "stats": {
+        "title": "Statistics",
+        "period": "Period",
+        "lastDays_one": "Last day",
+        "lastDays_other": "Last {{count}} days",
+        "empty": "No finished cases in this period.",
+        "cases": "Cases",
+        "taken": "Taken",
+        "cancelled": "Cancelled",
+        "avgWait": "Avg. wait",
+        "scope": "Queue",
+        "allQueues": "All queues",
+        "vipAvgWait": "Avg. wait VIP",
+        "otherAvgWait": "Avg. wait others",
+        "maxWait": "Longest wait",
+        "perSupporter": "Per supporter",
+        "perDay": "Per day",
+        "perDayTitle": "Per day",
+        "day": "Day",
+        "note": "Cases that ended in the period, by the day they arrived (your time zone). Waiting times count taken cases with a known arrival; a case taken by several supporters counts for each."
+      },
       "absent": "gone for {{time}}",
       "takenBy": "with {{names}}",
       "takenByWeb": "taken for {{names}}",
@@ -2655,11 +2916,20 @@
         "CASE_NOT_IN_PROGRESS": "This case is no longer in progress.",
         "CLIENT_OFFLINE": "The client is not online right now.",
         "NOT_A_SUPPORTER": "This supporter is no longer available (offline, away or in an AFK channel).",
-        "CHANNEL_NOT_FOUND": "This channel no longer exists."
+        "CHANNEL_NOT_FOUND": "This channel no longer exists.",
+        "CHANNEL_IN_USE": "This channel is already the waiting channel of the queue \"{{queue}}\".",
+        "QUEUE_NOT_FOUND": "This queue no longer exists."
       },
       "settings": {
         "open": "Settings",
         "title": "Support queue settings",
+        "newTitle": "New support queue",
+        "name": "Name",
+        "nameHint": "Shown on the tabs, on the dashboard and in flows, for example Technical or General.",
+        "delete": "Delete queue",
+        "deleteTitle": "Delete \"{{queue}}\"?",
+        "deleteDescription": "The queue and all its cases, open and ended, are deleted, and its statistics with them. Waiting clients stay in the channel.",
+        "deleted": "Queue \"{{queue}}\" deleted",
         "description": "Whoever enters the waiting channel is queued in order. A case is taken when a supporter pulls the client into their channel, or here with Take.",
         "conflictTitle": "A bot flow reacts to the same channel",
         "conflictText": "{{flows}} also handles clients entering this channel. Both would act on the same client; switch the flow off or use another channel.",
@@ -2668,6 +2938,8 @@
         "chooseChannel": "Choose a channel",
         "channelHint": "Changing the channel or switching the queue off ends the open cases.",
         "groups": "Supporter groups",
+        "vipGroups": "VIP groups",
+        "vipGroupsHint": "Members wait before everyone who is not in one of these groups; among themselves by arrival.",
         "afk": "AFK channels (supporters there do not count)",
         "grace": "Grace period (seconds)",
         "graceHint": "How long a client may be gone (disconnected, other channel) and keep their place.",
@@ -2683,6 +2955,27 @@
         },
         "needChannel": "Choose a waiting channel.",
         "needGroup": "Choose at least one supporter group.",
+        "messagesTitle": "Messages",
+        "clientMessages": "Private messages to waiting clients",
+        "clientMessagesHint": "On entering (with the position) and when a supporter takes them.",
+        "enterText": "On entering",
+        "noSupporterText": "On entering while no supporter is available",
+        "estimateText": "Usual waiting time (fills {estimate})",
+        "estimateHint": "{minutes} is the usual waiting time; added once 10 cases were taken. Leave empty to never add it.",
+        "takenText": "When taken",
+        "repeatMin": "Repeat the position every … minutes",
+        "repeatHint": "0 = never.",
+        "pokeSupporters": "Poke the supporters for each new client",
+        "pokeHint": "Only supporters who are available (not away, not in an AFK channel). Pokes are cut at 100 characters.",
+        "supporterPokeText": "Poke text",
+        "remind": "Remind the supporters when someone waits too long",
+        "remindHint": "One more poke per client.",
+        "remindAfterMin": "After … minutes",
+        "remindText": "Reminder text",
+        "historyTitle": "History",
+        "retention": "Keep finished cases for … days",
+        "retentionHint": "Applies to every virtual server.",
+        "retentionRange": "Between {{min}} and {{max}} days.",
         "saved": "Support queue saved"
       }
     },
@@ -3130,6 +3423,7 @@
         "trigger_cron": "Cron Timer",
         "trigger_webhook": "Webhook",
         "trigger_command": "Chat Command",
+        "trigger_support": "Support Case Taken",
         "action_message": "Send Message",
         "action_poke": "Poke Client",
         "action_kick": "Kick Client",
@@ -3157,6 +3451,7 @@
         "action_pokeGroup": "Poke Group",
         "action_rankCheck": "Rank Check",
         "action_tempChannelCleanup": "Temp Cleanup",
+        "action_supportEnqueue": "Queue for Support",
         "action_animatedChannel": "Animated Channel",
         "condition": "Condition",
         "loop": "Loop",
@@ -3223,6 +3518,14 @@
       "connections": "CONNECTIONS",
       "noConnections": "No connections",
       "config": {
+        "support": {
+          "queueLabel": "Support queue",
+          "chooseQueue": "Choose a queue",
+          "anyQueue": "Every queue of this virtual server",
+          "noQueue": "This virtual server has no support queue yet (Support Queue page).",
+          "triggerHint": "Starts when a supporter takes a waiting client, in TeamSpeak or with Take in the web interface. Needs no SSH. The event carries:",
+          "enqueueHint": "Moves the triggering client (event.clid) into the queue's waiting channel; the queue picks them up within a few seconds, like anyone who walks in. Skipped with a warning in the log when the queue is off, the client is one of its supporters, or nobody may queue while no supporter is available."
+        },
         "shared": {
           "commandLabel": "Command",
           "channelIdLabel": "Channel ID",
@@ -4060,6 +4363,97 @@
     }
   },
   "components": {
+    "flowTemplates": {
+      "import": "Import",
+      "importTitle": "Import flow template",
+      "importHint": "Loads a template file (.ts6flow.json) and creates a new flow from it on the selected server.",
+      "file": "Template file",
+      "invalid": "{{file}} is not a valid template:",
+      "byAuthor": "By {{author}}",
+      "summary": "{{nodes}} nodes, {{inputs}} inputs",
+      "importDisabledNote": "The flow is created disabled. Next you test it once; only an admin may enable it the first time.",
+      "secretsToEnter": "These secrets are empty and must be entered again in the editor:",
+      "imported": "Flow \"{{name}}\" imported (disabled)",
+      "importFailed": "Import failed",
+      "steps": {
+        "file": "File",
+        "map": "Map",
+        "test": "Test"
+      },
+      "stepOf": "Step {{step}} of 3: {{name}}",
+      "capabilitiesTitle": "This flow can:",
+      "capabilitiesNone": "Change nothing on the server and send nothing outside.",
+      "capabilities": {
+        "kick": "Kick clients",
+        "ban": "Ban clients",
+        "move": "Move clients",
+        "poke": "Poke clients",
+        "message": "Send messages",
+        "groups": "Add and remove server groups",
+        "channels": "Create, edit or delete channels",
+        "serverquery": "Run ServerQuery commands: {{details}}",
+        "http": "Send HTTP requests to: {{details}}",
+        "webhookTrigger": "Be started from outside by a webhook",
+        "voice": "Control music bots",
+        "supportQueue": "Put clients into the support queue"
+      },
+      "mapHint": "Pick the matching object of this server for each place. Objects with the same name are preselected.",
+      "types": {
+        "channel": "Channel",
+        "servergroup": "Server group",
+        "channelgroup": "Channel group",
+        "bot": "Music bot"
+      },
+      "choose": "Choose",
+      "originalNames": "In the original: {{names}}",
+      "originalId": "In the original: id {{id}} (name unknown)",
+      "noObjects": "This server has no matching objects.",
+      "optional": "optional",
+      "missingCount": "{{count}} required value(s) still missing.",
+      "testHint": "The flow is created and disabled. Test it once before you enable it; the test changes nothing.",
+      "enable": "Enable",
+      "keepDisabled": "Keep disabled",
+      "testFirst": "Enabling is possible after a test run.",
+      "enabled": "Flow \"{{name}}\" is enabled",
+      "enableFailed": "Enabling failed",
+      "updateTitle": "Update of an installed flow",
+      "updateBasis": "Installed flow to compare with",
+      "updateOf": "\"{{flow}}\" on this server runs version {{from}}, this file is version {{to}}.",
+      "updateRelation": {
+        "same": "This is the version that is already installed.",
+        "older": "This file is older than the installed version."
+      },
+      "updateMajor": "New major version: the inputs have changed and must be mapped again.",
+      "updateNewCapabilities": "The new version can also do this",
+      "diffPrevious": "Changes since version {{version}}",
+      "diffPreviousUnknown": "Version {{version}} was imported before versions were kept, so only the comparison with the installed flow is shown.",
+      "diffLocal": "Compared with \"{{flow}}\" as it is now",
+      "diffSummary": "{{added}} new, {{removed}} removed, {{changed}} changed",
+      "diffHeading": "{{title}}: {{summary}}",
+      "diffNone": "no differences",
+      "diffAdded": "New: {{name}}",
+      "diffRemoved": "Removed: {{name}}",
+      "diffChanged": "Changed: {{name}}",
+      "diffEdges": "Connections: {{added}} new, {{removed}} removed",
+      "updateCopyNote": "The update is imported as a new, disabled flow. \"{{flow}}\" stays as it is; you can delete it once the new one works.",
+      "updateCheckFailed": "Could not check for an installed earlier version; the file is imported as a new flow.",
+      "exportTitle": "Export as template",
+      "exportHint": "Saves this flow as a template file another manager can import. Channels, groups and bots become inputs, secrets are removed.",
+      "exportFailed": "Export failed",
+      "id": "Template ID",
+      "version": "Version",
+      "author": "Author (optional)",
+      "download": "Download",
+      "secretsRemoved": "These secrets are not saved in the file:",
+      "warningsTitle": "These places may still hold channels or groups of this server and are not mapped on import:",
+      "reasons": {
+        "expression": "condition",
+        "event-filter": "event filter",
+        "webquery": "WebQuery command",
+        "rank-list": "rank list",
+        "support-queue": "support queue"
+      }
+    },
     "onlineCountFilter": {
       "title": {
         "dashboard": "Who counts as online",
