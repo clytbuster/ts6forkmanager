@@ -231,6 +231,8 @@ model SupportCase {
   notices        String?
   // In a VIP group: waits before everyone who is not (stage 4); followed live while waiting.
   vip            Boolean      @default(false)
+  // A web take-over failed and the client could not be moved back: SupportTakeFailure in common, as JSON.
+  takeFailure    String?
   queue          SupportQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
 
   @@index([queueId, state])
@@ -341,8 +343,16 @@ model BotFlow {
   virtualServerId Int      @default(1)
   serverConfig    TsServerConfig @relation(fields: [serverConfigId], references: [id], onDelete: Cascade)
   enabled         Boolean  @default(false)
+  // An imported flow (flowData.imported) runs only once an admin approved it; set when an admin enables it,
+  // cleared when a non-admin changes what it does. approvedBy is null for approvals from before this column.
+  approvedAt      DateTime?
+  approvedBy      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  // Webhook calls whose secret came in the address (?secret=) instead of the header, and the last one;
+  // shown so an admin can switch the callers over (see utils/webhook-query-secret.ts).
+  querySecretCalls  Int       @default(0)
+  querySecretLastAt DateTime?
 
   executions BotExecution[]
   variables  BotVariable[]
@@ -544,6 +554,8 @@ model MusicRequest {
   serverConfigId Int
   serverConfig   TsServerConfig @relation(fields: [serverConfigId], references: [id], onDelete: Cascade)
   requestedAt    DateTime       @default(now())
+  /** The link was a channel that was live at the time; playing it again is a new live call. */
+  isLive         Boolean        @default(false)
 
   @@unique([serverConfigId, url])
 }

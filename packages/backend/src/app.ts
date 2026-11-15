@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { authMiddleware } from './middleware/auth.js';
 import { requestTimeout } from './middleware/request-timeout.js';
 import { ipBanMiddleware } from './middleware/ip-ban.js';
+import { webhookIngress } from './middleware/webhook-ingress.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { oidcAuthRoutes } from './routes/oidc-auth.routes.js';
 import { serverRoutes } from './routes/servers.routes.js';
@@ -73,6 +74,15 @@ export function createApp(): Express {
   // A banned address is turned away before anything else is read or parsed - after CORS, so
   // the browser of a banned visitor can still read the answer.
   app.use(ipBanMiddleware);
+
+  // Bot webhook route (unauthenticated — called by external systems). In front of the app-wide
+  // JSON parser: its own rate limits and body size limit run before any body is read.
+  app.all('/api/bots/webhook/*path', ...webhookIngress(), (req, res) => {
+    const engine = req.app.locals.botEngine;
+    if (!engine) return res.status(503).json({ error: 'Bot engine not running' });
+    engine.handleWebhookRequest(req, res);
+  });
+
   app.use(express.json({ limit: '10mb' }));
 
   // Health check
@@ -105,13 +115,6 @@ export function createApp(): Express {
   app.use('/api/auth', changeLogMiddleware);
   app.use('/api/auth', authRoutes);
   app.use('/api/auth/oidc', oidcAuthRoutes);
-
-  // Bot webhook route (unauthenticated — called by external systems)
-  app.all('/api/bots/webhook/*path', (req, res) => {
-    const engine = req.app.locals.botEngine;
-    if (!engine) return res.status(503).json({ error: 'Bot engine not running' });
-    engine.handleWebhookRequest(req, res);
-  });
 
   // Public widget routes (unauthenticated — embeddable on external sites)
   app.use('/api/widget', widgetPublicRoutes);
@@ -200,6 +203,7 @@ export function createApp(): Express {
     { method: 'GET', path: '/history', permission: 'server.view' },
     { method: 'GET', path: '/queues/:queueId/history', permission: 'server.view' },
     { method: 'POST', path: '/cases/:id/take', permission: 'clients.move' },
+    { method: 'POST', path: '/cases/:id/bring-back', permission: 'clients.move' },
     { method: 'POST', path: '/cases/:id/remove', permission: 'clients.move' },
     { method: 'POST', path: '/cases/:id/close', permission: 'clients.move' },
   ]);
@@ -226,6 +230,7 @@ export function createApp(): Express {
     { method: 'GET', path: '/find', permission: 'permissions.edit' },
     { method: 'GET', path: '/overview/:cldbid', permission: 'permissions.edit' },
     { method: 'GET', path: '/explain', permission: 'permissions.edit' },
+    { method: 'POST', path: '/explain-whatif', permission: 'permissions.edit' },
   ]);
   serverScoped('vs/:sid/bans', banRoutes, [
     { method: 'GET', path: '/', permission: 'bans.view' },

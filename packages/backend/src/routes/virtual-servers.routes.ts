@@ -1,8 +1,17 @@
 import { Router, Request, Response } from 'express';
 import { requireRole, requirePermission } from '../middleware/rbac.js';
-import { AppError } from '../middleware/error-handler.js';
+import { AppError, TSApiError } from '../middleware/error-handler.js';
 import type { ConnectionPool } from '../ts-client/connection-pool.js';
 import { grantCovers, grantOf } from '../utils/vs-access.js';
+import { backupBeforeDeleting } from '../utils/bulk-backup.js';
+import { cleanUpDeletedVirtualServer } from '../utils/virtual-server-cleanup.js';
+import type { VirtualServerDeleteResult } from '@ts6/common';
+import { backupsWithSnapshot, readBackupSnapshot } from '../utils/backups.js';
+import { compareSnapshots, readSnapshot } from '../utils/ts-snapshot.js';
+import type { BulkOutcome, SnapshotBackupSource, SnapshotCompareRequest, SnapshotCompareSource, SnapshotRestoreRequest, SnapshotRestoreResult } from '@ts6/common';
+import { BULK_MAX } from '@ts6/common';
+import { ensureBulkBackup } from '../utils/bulk-backup.js';
+import { restoreGroups } from '../utils/snapshot-restore.js';
 
 export const virtualServerRoutes: Router = Router({ mergeParams: true });
 
@@ -100,12 +109,54 @@ virtualServerRoutes.post('/:sid/stop', requireRole('admin'), async (req: Request
   } catch (err) { next(err); }
 });
 
+const statusOf = async (client: ReturnType<typeof getClient>, sid: number): Promise<string | undefined> => {
+  const list = await client.execute(0, 'serverlist');
+  const vs = (Array.isArray(list) ? list : [list]).find((s: { virtualserver_id?: unknown }) => Number(s?.virtualserver_id) === sid);
+  return vs ? String(vs.virtualserver_status) : undefined;
+};
+
+// TS6 deletes only a stopped server (measured: a running one answers 1035, an unknown sid 1024;
+// sids are never handed out again). A stopped server that a query client touched (the bandwidth
+// sampler, or the snapshot of the backup before this) is "online virtual": no voice clients, but TS6
+// still answers 1035 until it is stopped again - so that one is stopped and retried once.
+// Order: state check, backup, delete, then the manager's own data of that server (cleanUpDeletedVirtualServer).
 virtualServerRoutes.delete('/:sid', requireRole('admin'), async (req: Request, res: Response, next) => {
   try {
-    const sid = parseInt(String(req.params.sid));
-    const result = await getClient(req).execute(0, 'serverdelete', { sid });
+    if (!/^[1-9]\d*$/.test(String(req.params.sid))) throw new AppError(400, 'Invalid virtual server ID');
+    const sid = Number(req.params.sid);
+    const configId = Number(req.params.configId);
+    const client = getClient(req);
+    const status = await statusOf(client, sid);
+    if (status === undefined) throw new TSApiError(1024, 'invalid serverID');
+    if (status !== 'offline' && status !== 'online virtual') throw new TSApiError(1035, 'server got an invalid status for this operation');
+
+    const backup = await backupBeforeDeleting(req, undefined, true);
+    try {
+      await client.execute(0, 'serverdelete', { sid });
+    } catch (err) {
+      if (!(err instanceof TSApiError && err.code === 1035) || (await statusOf(client, sid)) !== 'online virtual') throw err;
+      await client.execute(0, 'serverstop', { sid });
+      await client.execute(0, 'serverdelete', { sid });
+    }
+
+    const result: VirtualServerDeleteResult = { deleted: true, backup, cleanup: null };
+    try {
+      result.cleanup = await cleanUpDeletedVirtualServer({ prisma: req.app.locals.prisma, botEngine: req.app.locals.botEngine, raid: req.app.locals.raidProtection }, configId, sid);
+    } catch (err) {
+      // TeamSpeak has deleted the server already: say what is left instead of a failure.
+      result.cleanupError = (err as Error).message;
+      console.error(`[VirtualServers] Clean-up after deleting ${configId}/${sid} failed: ${result.cleanupError}`);
+    }
     res.json(result);
-  } catch (err) { next(err); }
+  } catch (err) {
+    if (err instanceof TSApiError && err.code === 1035) {
+      return next(new AppError(409, 'Only a stopped virtual server can be deleted - stop it first', undefined, 'SERVER_RUNNING'));
+    }
+    if (err instanceof TSApiError && err.code === 1024) {
+      return next(new AppError(404, 'This virtual server does not exist (any more)', undefined, 'SERVER_NOT_FOUND'));
+    }
+    next(err);
+  }
 });
 
 virtualServerRoutes.post('/:sid/snapshot', requireRole('admin'), async (req: Request, res: Response, next) => {
@@ -129,6 +180,80 @@ virtualServerRoutes.post('/:sid/snapshot/deploy', requireRole('admin'), async (r
     const params: Record<string, string> = { version: String(version), data };
     if (keepFiles === true) params['-keepfiles'] = '';
     const result = await getClient(req).executePost(sid, 'serversnapshotdeploy', params, true);
+    res.json(result);
+  } catch (err) { next(err); }
+});
+
+// The backups that hold a snapshot of this virtual server: what the compare page offers next to a file.
+virtualServerRoutes.get('/:sid/snapshot/compare-sources', requireRole('admin'), (req: Request, res: Response) => {
+  const sources: SnapshotBackupSource[] = backupsWithSnapshot(parseInt(String(req.params.configId)), parseInt(String(req.params.sid)));
+  res.json(sources);
+});
+
+// Two snapshots of this virtual server, each a file, one in a backup, or the live server (`against`
+// defaults to live). The live side is a fresh snapshot read in memory and never stored (it holds the
+// server's keys and client identities). Read-only: marked as dryRun so the change log leaves it out.
+virtualServerRoutes.post('/:sid/snapshot/compare', requireRole('admin'), async (req: Request, res: Response, next) => {
+  try {
+    const configId = parseInt(String(req.params.configId));
+    const sid = parseInt(String(req.params.sid));
+    const read = async (source: SnapshotCompareSource | undefined, side: string) => {
+      if (source?.type === 'file') return readSnapshot(source.snapshot ?? {});
+      if (source?.type === 'backup' && typeof source.kind === 'string' && typeof source.name === 'string') return readSnapshot(readBackupSnapshot(source.kind, source.name, configId, sid));
+      if (source?.type === 'live') {
+        const result = await getClient(req).execute(sid, 'serversnapshotcreate');
+        return readSnapshot((Array.isArray(result) ? result[0] : result) ?? {});
+      }
+      throw new AppError(400, `Name a snapshot file, a backup or the live server for the ${side} side`);
+    };
+    const body = (req.body ?? {}) as Partial<SnapshotCompareRequest>;
+    const before = await read(body.source, 'before');
+    const after = await read(body.against ?? { type: 'live' }, 'after');
+    res.locals.dryRun = true;
+    res.json(compareSnapshots(before, after));
+  } catch (err) { next(err); }
+});
+
+// Brings single groups back from a snapshot (a file or a backup) as new groups. dryRun = the preview
+// (nothing created, no backup, no change-log row). Otherwise a before-bulk backup of this virtual
+// server is taken first; when it fails nothing happens unless the dialog sends skipBackup.
+virtualServerRoutes.post('/:sid/snapshot/restore-groups', requireRole('admin'), async (req: Request, res: Response, next) => {
+  try {
+    const configId = parseInt(String(req.params.configId));
+    const sid = parseInt(String(req.params.sid));
+    const body = (req.body ?? {}) as Partial<SnapshotRestoreRequest>;
+    const source = body.source;
+    let snapshot;
+    if (source?.type === 'file') snapshot = source.snapshot;
+    else if (source?.type === 'backup' && typeof source.kind === 'string' && typeof source.name === 'string') snapshot = readBackupSnapshot(source.kind, source.name, configId, sid);
+    else throw new AppError(400, 'Name the snapshot file or backup to restore from');
+    const choices = Array.isArray(body.groups) ? body.groups : [];
+    if (choices.length === 0 || choices.length > BULK_MAX
+      || !choices.every((c) => (c?.kind === 'serverGroup' || c?.kind === 'channelGroup') && Number.isInteger(c.id) && c.id > 0 && (c.newName === undefined || typeof c.newName === 'string'))) {
+      throw new AppError(400, `Name 1 to ${BULK_MAX} groups to restore (kind serverGroup or channelGroup, id, optional newName)`);
+    }
+    const snap = readSnapshot(snapshot ?? {});
+    const dryRun = body.dryRun === true;
+    let backup: string | undefined;
+    if (!dryRun && body.skipBackup !== true) {
+      try {
+        backup = await ensureBulkBackup(req.app.locals.prisma, req.app.locals.connectionPool, configId, sid, req.user?.username ?? 'unknown');
+      } catch (err) {
+        const reason = err instanceof AppError && err.details ? `${err.message}: ${err.details}` : (err as Error).message;
+        throw new AppError(409, 'The backup before restoring failed, so nothing was restored', reason, 'BACKUP_FAILED');
+      }
+    }
+    const outcomes = await restoreGroups(getClient(req), req.app.locals.prisma, configId, sid, snap, choices, { dryRun, members: body.members === true });
+    if (dryRun) res.locals.dryRun = true;
+    // The change log keeps one line per group, like a bulk action (R9).
+    else res.locals.bulkOutcomes = outcomes.map((o): BulkOutcome => ({
+      id: o.oldId,
+      name: `${o.name}${o.newId ? ` -> #${o.newId}${o.createdAs ? ` "${o.createdAs}"` : ''}` : ''}`,
+      status: o.status === 'created' ? 'ok' : o.status === 'failed' ? 'failed' : 'skipped',
+      ...(o.status === 'skipped' ? { reason: o.reason === 'not-in-snapshot' ? 'not-found' as const : 'already-there' as const } : {}),
+      ...(o.message ? { message: o.message } : o.permFailures ? { message: `${o.permFailures.length} permission(s) not set` } : {}),
+    }));
+    const result: SnapshotRestoreResult = { ...(dryRun ? { dryRun: true as const } : {}), outcomes, ...(backup ? { backup } : {}) };
     res.json(result);
   } catch (err) { next(err); }
 });

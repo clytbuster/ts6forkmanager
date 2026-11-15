@@ -1,5 +1,6 @@
 {
   "common": {
+    "live": "LIVE",
     "save": "Enregistrer",
     "saving": "Enregistrement en cours...",
     "cancel": "Annuler",
@@ -86,6 +87,31 @@
     "collapse": "Réduire",
     "menu": "Navigation",
     "openMenu": "Ouvrir la navigation",
+    "search": {
+      "open": "Rechercher",
+      "title": "Recherche globale",
+      "placeholder": "Rechercher des pages, des paramètres et des objets du serveur …",
+      "recent": "Ouverts récemment",
+      "pages": "Pages",
+      "empty": "Aucun résultat",
+      "ctrl": "Ctrl",
+      "hint": "↑↓ pour choisir, Entrée pour ouvrir, Échap pour fermer",
+      "noWebQuery": "Cette connexion n’a pas de WebQuery : les clients, canaux et groupes ne sont pas recherchés.",
+      "offlineAll": "Les {{count}} dans la base de données clients",
+      "searchingDatabase": "Recherche dans la base de données clients …",
+      "types": {
+        "clients": "Clients",
+        "client": "Client",
+        "channels": "Canaux",
+        "channel": "Canal",
+        "serverGroup": "Groupe de serveur",
+        "channelGroup": "Groupe de canal",
+        "flow": "Flux de bot",
+        "musicBot": "Bot musical",
+        "offlineClients": "Clients hors ligne",
+        "offlineClient": "Base de données clients"
+      }
+    },
     "closeMenu": "Fermer la navigation",
     "sections": {
       "overview": "Vue d'ensemble",
@@ -354,6 +380,7 @@
         "check": "Tester",
         "checking": "Test …",
         "download": "Télécharger",
+        "compare": "Comparer",
         "restore": "Restaurer",
         "delete": "Supprimer"
       },
@@ -441,6 +468,9 @@
     },
     "botList": {
       "selectServerFirst": "Veuillez d'abord sélectionner un serveur",
+      "querySecretHint": "Appels webhook avec le secret dans l’adresse au lieu de l’en-tête X-Webhook-Secret, dernier le {{date}}. Détails dans l’éditeur, au déclencheur webhook.",
+      "querySecret_other": "{{count}} appels avec ?secret=",
+      "querySecret_one": "{{count}} appel avec ?secret=",
       "created": "Bot créé",
       "createFailed": "Échec de la création du bot",
       "fromTemplate": "Depuis un modèle",
@@ -455,6 +485,11 @@
       "dropped_one": "{{count}} déclenchement rejeté (24 h)",
       "dropped_other": "{{count}} déclenchements rejetés (24 h)",
       "droppedHint": "Au cours des dernières 24 heures, ce flux exécutait déjà son nombre maximal d'exécutions simultanées ; les déclenchements supplémentaires n'ont pas été exécutés.",
+      "approvalPending": "Approbation en attente",
+      "approvalPendingHint": "Flow importé : seul un admin peut l'approuver, en l'activant.",
+      "approvedBy": "Approuvé par {{user}} le {{date}}",
+      "approved": "Approuvé",
+      "approvalRequired": "Ce flow importé doit être approuvé par un admin : un admin doit l'activer.",
       "editFlow": "Modifier le flux",
       "newBotFlow": "Nouveau flux de bot",
       "namePlaceholder": "Mon automatisation",
@@ -464,8 +499,24 @@
       "deleteTitle": "Supprimer le bot ?",
       "deleteDescription": "Cela supprimera définitivement ce flux de bot et tout son historique d'exécution.",
       "deleted": "Bot supprimé",
+      "webhooks": {
+        "title": "Webhooks : limites d’entrée",
+        "allowQuerySecretHint": "La méthode recommandée est l’en-tête X-Webhook-Secret. Tant que c’est autorisé, chaque flux compte et affiche ses appels avec ?secret= ; désactivé, ces appels reçoivent 404.",
+        "allowQuerySecretLabel": "Autoriser ?secret= dans l’adresse",
+        "description": "Limites des appels webhook entrants, vérifiées avant la lecture du contenu. Les appels valides (secret correct) et les échecs (chemin inconnu ou secret erroné) sont comptés séparément par adresse. S’applique à toute l’instance.",
+        "bodyLimitKbLabel": "Contenu maximal (Ko)",
+        "bodyLimitKbHint": "{{min}} à {{max}} Ko ; au-delà, réponse 413. Un proxy en amont peut avoir sa propre limite, plus petite.",
+        "validPerMinuteLabel": "Appels valides par adresse et minute",
+        "validPerMinuteHint": "{{min}} à {{max}} ; au-delà, le manager répond 429.",
+        "failedPerMinuteLabel": "Échecs par adresse et minute",
+        "failedPerMinuteHint": "{{min}} à {{max}} ; au-delà, 429 et une entrée dans le journal des connexions.",
+        "saved": "Limites webhook enregistrées",
+        "saveFailed": "Impossible d’enregistrer les limites webhook"
+      },
       "retention": {
         "title": "Exécutions : conservation et limite",
+        "maxRuntimeHint": "0 à {{max}} ; 0 = sans limite. Comptée depuis son début, même après un redémarrage. Une exécution plus longue se termine en échec avant son nœud suivant ou à la fin d’un délai ; une commande WebQuery ou un appel HTTP déjà en cours se termine quand même.",
+        "maxRuntimeLabel": "Durée maximale d’une exécution (minutes)",
         "description": "Durée de conservation de l'historique d'exécution de tous les flux de bots (exécutions et leurs lignes de journal). S'applique à toute l'instance ; tout ce qui est plus ancien est supprimé chaque heure.",
         "retentionLabel": "Conservation (jours)",
         "retentionHint": "Entre {{min}} et {{max}} jours.",
@@ -627,7 +678,160 @@
       "namePlaceholder": "Mon serveur TeamSpeak",
       "portOptional": "Port (facultatif)",
       "portPlaceholder": "Laisser vide pour le premier port libre",
-      "autostartWithInstance": "Démarrer automatiquement avec l'instance"
+      "autostartWithInstance": "Démarrer automatiquement avec l'instance",
+      "deleteStopFirst": "Arrêtez d'abord le serveur - seul un serveur arrêté peut être supprimé.",
+      "deleteDialogTitle": "Supprimer le serveur virtuel",
+      "deleteDialogDescription": "Supprime définitivement « {{name}} » (SID {{sid}}) de cette instance TeamSpeak. Cette action est irréversible.",
+      "deleteWhatGoes": "Tout ce qui appartient à ce serveur disparaît avec lui : canaux et leurs fichiers, groupes de serveur et de canal, permissions, base de données clients, bannissements, icônes et jetons.",
+      "deleteSnapshotNote": "Le snapshot de la sauvegarde n'en restaure qu'une partie : groupes, canaux et profils clients, mais pas les bannissements, icônes ni fichiers de canal. Pour l'utiliser, créez un nouveau serveur virtuel et déployez-y le snapshot (page Divers).",
+      "deleteManagerData": "Les réglages propres au gestionnaire pour ce serveur disparaissent aussi : accès des utilisateurs, groupes protégés, protection anti-raid et avis des groupes temporaires ; ses files de support et ses flux sont désactivés. Journal des modifications, statistiques, journal des connexions, incidents de raid et demandes de support restent jusqu'à la fin de leur durée de conservation.",
+      "deleteLastWarning": "C'est le dernier serveur virtuel de cette instance. Personne ne pourra se connecter tant qu'un nouveau n'aura pas été créé.",
+      "deleteFirstWarning": "C'est le premier serveur de l'instance (SID 1), généralement celui que les clients joignent sur le port par défaut.",
+      "deleteTypeName": "Saisissez le nom du serveur pour confirmer : {{name}}",
+      "deleteConfirm": "Supprimer définitivement",
+      "deleted": "Serveur virtuel « {{name}} » supprimé",
+      "deleteFailed": "Échec de la suppression du serveur virtuel",
+      "deleteRunning": "Le serveur est en cours d'exécution - arrêtez-le d'abord, puis supprimez-le.",
+      "deleteNotFound": "Ce serveur virtuel n'existe plus. La liste a été actualisée.",
+      "deleteNoPermission": "Le compte query de la connexion n'a pas le droit de supprimer des serveurs virtuels (b_virtualserver_delete).",
+      "deleteResultBackup": "Sauvegarde avant la suppression : {{name}} (page Sauvegardes).",
+      "deleteResultNoBackup": "Supprimé sans sauvegarde.",
+      "cleanupDone": "Les données du gestionnaire pour ce serveur :",
+      "cleanupAccess": "Accès supprimés : {{count}}",
+      "cleanupProtected": "Groupes protégés supprimés : {{count}}",
+      "cleanupTempGroups": "Appartenances temporaires ouvertes terminées : {{count}}",
+      "cleanupQueues": "Files de support désactivées : {{count}}",
+      "cleanupRaid": "Réglages de protection anti-raid supprimés",
+      "cleanupFlows": "Flux désactivés : {{names}}",
+      "cleanupNothing": "Le gestionnaire n'avait aucun réglage enregistré pour ce serveur.",
+      "cleanupWidgets": "Ces widgets intégrés pointent encore vers le serveur supprimé et affichent une erreur tant que vous ne les modifiez ou supprimez pas : {{names}}",
+      "cleanupHistory": "L'historique (journal des modifications, statistiques, journal des connexions, incidents de raid, demandes de support) reste jusqu'à la fin de sa durée de conservation.",
+      "cleanupFailed": "Le serveur est supprimé, mais le nettoyage des données du gestionnaire a échoué : {{reason}}"
+    },
+    "snapshotCompare": {
+      "title": "Comparaison de snapshot",
+      "whatToCompare": "Que comparer",
+      "sideBefore": "Avant",
+      "sideAfter": "Après",
+      "fromLive": "Serveur actuel",
+      "liveNow": "Serveur maintenant",
+      "fileLabel": "Fichier {{name}}",
+      "backupLabel": "Sauvegarde {{time}}",
+      "linkedMissing": "Cette sauvegarde ne contient pas de snapshot du serveur virtuel sélectionné en haut. Sélectionnez le serveur dont vous voulez comparer le snapshot.",
+      "description": "Compare deux états du même serveur virtuel : un snapshot (d'une sauvegarde ou d'un fichier) avec l'état actuel, ou deux snapshots entre eux. Rien n'est modifié sur le serveur ; l'état actuel est lu à nouveau pour cela et n'est pas enregistré.",
+      "sourceType": "Source",
+      "fromBackup": "Depuis une sauvegarde",
+      "fromFile": "Depuis un fichier",
+      "backup": "Sauvegarde",
+      "pickBackup": "Choisir une sauvegarde",
+      "pickFile": "Choisir un fichier snapshot",
+      "noBackups": "Aucune sauvegarde ne contient de snapshot de ce serveur. Les sauvegardes n'incluent les snapshots TeamSpeak que si c'est activé sur la page Sauvegardes, et avant les suppressions. Vous pouvez choisir un fichier snapshot à la place.",
+      "scope": "Sont comparés les groupes serveur, les groupes de salon, les salons et leurs permissions, chacun par ID : un groupe supprimé puis recréé apparaît comme supprimé et nouveau. Les paramètres du serveur, les permissions client et les appartenances ne sont pas comparés.",
+      "compare": "Comparer",
+      "comparing": "Comparaison en cours...",
+      "failed": "La comparaison a échoué",
+      "countLine": "{{added}} nouveaux, {{removed}} supprimés, {{changed}} modifiés, {{unchanged}} identiques",
+      "noDifferences": "Aucune différence : groupes, salons et permissions sont identiques des deux côtés.",
+      "searchPlaceholder": "Rechercher un nom, un ID ou une permission",
+      "kindFilter": "Type",
+      "allKinds": "Tous les types",
+      "noMatch": "Rien ne correspond à la recherche.",
+      "objectCount_one": "{{count}} différence",
+      "objectCount_other": "{{count}} différences",
+      "permissionCount_one": "{{count}} permission",
+      "permissionCount_other": "{{count}} permissions",
+      "restore": {
+        "hint": "Les groupes présents uniquement dans le snapshot peuvent être restaurés comme nouveaux groupes.",
+        "open": "Restaurer la sélection ({{count}})",
+        "select": "Sélectionner {{name}} pour la restauration",
+        "title_one": "Restaurer {{count}} groupe",
+        "title_other": "Restaurer {{count}} groupes",
+        "description": "Les groupes sont recréés avec leurs permissions du snapshot, avec les droits de l'identité du manager. Rien d'autre n'est modifié sur le serveur.",
+        "resultTitle": "Résultat de la restauration",
+        "resultDescription": "Ce qui a été créé, ignoré ou n'a pas été possible.",
+        "checking": "Préparation de l'aperçu...",
+        "failed": "La restauration a échoué",
+        "permissions_one": "{{count}} permission",
+        "permissions_other": "{{count}} permissions",
+        "membersInSnapshot_one": "{{count}} membre dans le snapshot",
+        "membersInSnapshot_other": "{{count}} membres dans le snapshot",
+        "nameTaken": "Le serveur a déjà un groupe de ce nom. Que faire ?",
+        "skipIt": "Ignorer ce groupe",
+        "otherName": "Le créer sous un autre nom",
+        "newName": "Nouveau nom",
+        "nameLimit": "{{max}} caractères au maximum.",
+        "members": "Réinscrire les membres des groupes serveur (seulement les clients encore dans la base de données clients)",
+        "newIdsNote": "Les groupes restaurés reçoivent de nouveaux ID. Ce qui pointe encore vers l'ancien ID n'est pas modifié mais listé ici.",
+        "backupNote": "Une sauvegarde de ce serveur virtuel est faite automatiquement avant.",
+        "withoutBackup": "Restaurer sans sauvegarde",
+        "running": "Restauration en cours...",
+        "confirm": "Restaurer",
+        "references": "Pointent encore vers l'ancien ID :",
+        "referencesAfter": "Ces endroits pointent encore vers l'ancien ID et doivent être passés à #{{newId}} si souhaité :",
+        "where": {
+          "protected-group": "Groupe protégé (page Groupes serveur)",
+          "temporary-group": "Appartenances temporaires (en cours)",
+          "support-queue": "File de support (salon:champ)",
+          "raid-protection": "Protection anti-raid",
+          "command-permission": "Droits des commandes de chat",
+          "command-admin-group": "Groupe admin des commandes de chat",
+          "flow": "Flow de bot (flow / nœud / champ)"
+        },
+        "backupTaken": "Sauvegarde faite avant : {{name}}",
+        "noBackup": "Restauré sans sauvegarde.",
+        "createdHeading_one": "{{count}} groupe créé",
+        "createdHeading_other": "{{count}} groupes créés",
+        "idMap": "ancien ID #{{oldId}} → nouvel ID #{{newId}}",
+        "permsSet": "{{count}} permissions sur {{total}} définies",
+        "membersResult": "Membres : {{added}} ajoutés, {{missing}} plus dans la base de données clients, {{failed}} en échec",
+        "skippedHeading_one": "{{count}} ignoré",
+        "skippedHeading_other": "{{count}} ignorés",
+        "failedHeading_one": "{{count}} impossible",
+        "failedHeading_other": "{{count}} impossibles",
+        "status": {
+          "ready": "Sera créé",
+          "name-taken": "Nom pris",
+          "created": "Créé",
+          "failed": "Échec",
+          "skipped-name-taken": "Nom déjà pris",
+          "skipped-still-exists": "Le groupe existe encore",
+          "skipped-not-in-snapshot": "Pas dans le snapshot",
+          "skipped-invalid-name": "Nom invalide"
+        }
+      },
+      "kinds": {
+        "serverGroup": "Groupe serveur",
+        "channelGroup": "Groupe de salon",
+        "channel": "Salon"
+      },
+      "status": {
+        "added": "Nouveau",
+        "removed": "Supprimé",
+        "changed": "Modifié"
+      },
+      "field": "Champ",
+      "permission": "Permission",
+      "empty": "(vide)",
+      "topLevel": "(niveau supérieur)",
+      "first": "(en premier)",
+      "negated": "niée",
+      "skip": "ignorer",
+      "fields": {
+        "name": "Nom",
+        "parent": "Salon parent",
+        "below": "Placé sous",
+        "channel_name": "Nom",
+        "channel_topic": "Sujet",
+        "channel_description": "Description",
+        "channel_flag_password": "Mot de passe défini",
+        "channel_flag_permanent": "Permanent",
+        "channel_flag_semi_permanent": "Semi-permanent",
+        "channel_flag_default": "Salon par défaut",
+        "channel_maxclients": "Clients max.",
+        "channel_maxfamilyclients": "Clients max. avec sous-salons",
+        "channel_codec": "Codec",
+        "channel_codec_quality": "Qualité du codec"
+      }
     },
     "misc": {
       "identityUpdated": "Identité mise à jour",
@@ -656,6 +860,7 @@
       "creating": "Création en cours...",
       "createAndDownload": "Créer et télécharger",
       "restoreFromFile": "Restaurer depuis un fichier",
+      "compareWithServer": "Comparer avec le serveur",
       "restoreWarning": "La restauration écrase les paramètres, groupes et permissions du serveur actuellement sélectionné.",
       "dangerZone": "Zone de danger",
       "dangerZoneDescription": "Supprime toutes les permissions de groupe, client et salon du serveur actuellement sélectionné, puis recrée les groupes modèles par défaut. Impossible à annuler.",
@@ -822,7 +1027,8 @@
       "downloadQuotaMb": "Quota de download (Mo)",
       "uploadBandwidth": "Bande passante d'upload (octets/s)",
       "downloadBandwidth": "Bande passante de download (octets/s)",
-      "zeroUnlimited": "0 = illimité"
+      "quotaUnlimitedHint": "-1 = illimité (TeamSpeak affiche alors le plus grand nombre possible). 0 bloque les transferts de fichiers.",
+      "bandwidthUnlimitedHint": "-1 = illimité (TeamSpeak affiche alors le plus grand nombre possible)."
     },
     "notFound": {
       "title": "Page introuvable",
@@ -1258,6 +1464,12 @@
         "liveAudioLabel": "Lire les streams en direct (son)",
 
         "liveAudioHint": "Un bot musical lit une chaîne en direct (chaîne Twitch, live YouTube) avec !play ou le lecteur web, son uniquement. Ne diffusez que des contenus que vous avez le droit de partager.",
+
+
+        "liveVideoLabel": "Lire les streams en direct en vidéo",
+
+
+        "liveVideoHint": "!stream et l’onglet Vidéo acceptent une chaîne en direct et la diffusent avec image et son jusqu’à ce que quelqu’un l’arrête ou la passe, ou que la chaîne passe hors ligne. Désactivé par défaut : une vidéo en direct occupe l’encodeur et le débit montant tant qu’elle tourne.",
 
         "liveMaxLabel": "Limite des streams en direct (minutes)",
 
@@ -1764,12 +1976,14 @@
       "actions": {
         "take": "Prendre en charge",
         "remove": "Retirer",
-        "close": "Terminer"
+        "close": "Terminer",
+        "bringBack": "Ramener"
       },
       "toasts": {
         "take": "{{client}} est pris en charge ; les deux sont dans un nouveau salon.",
         "remove": "{{client}} a été retiré de la file.",
-        "close": "Le cas de {{client}} est terminé."
+        "close": "Le cas de {{client}} est terminé.",
+        "bringBack": "{{client}} est de retour dans le canal d'attente."
       },
       "positionLabel": "Position {{position}}",
       "arrivalUnknownHint": "Attendait déjà quand la file a commencé à observer ; l'arrivée réelle est inconnue.",
@@ -1814,6 +2028,11 @@
       "noSupporterOnline": "Aucun agent n'est disponible pour le moment (en ligne, non absent, pas dans un salon AFK).",
       "supporter": "Agent de support",
       "chooseSupporter": "Choisir un agent",
+      "takeFailed": "La prise en charge a échoué à « {{step}} » et le retour du client a aussi échoué ({{error}}).",
+      "takeFailedClientIn": "Ensuite, le client était dans le canal {{cid}}.",
+      "takeFailedClientOffline": "Ensuite, le client n'était pas en ligne.",
+      "takeFailedRoom": "La salle existe encore.",
+      "takeSteps": { "create-room": "créer la salle", "move-client": "déplacer le client", "move-supporter": "déplacer le support" },
       "errors": {
         "CASE_NOT_WAITING": "Ce client n'attend plus.",
         "CASE_NOT_IN_PROGRESS": "Ce cas n'est plus en cours.",
@@ -1821,7 +2040,12 @@
         "NOT_A_SUPPORTER": "Cet agent n'est plus disponible (hors ligne, absent ou dans un salon AFK).",
         "CHANNEL_NOT_FOUND": "Ce salon n'existe plus.",
         "CHANNEL_IN_USE": "Ce salon est déjà le salon d'attente de la file « {{queue}} ».",
-        "QUEUE_NOT_FOUND": "Cette file n'existe plus."
+        "QUEUE_NOT_FOUND": "Cette file n'existe plus.",
+        "TAKE_FAILED_CREATE_ROOM": "La prise en charge a échoué lors de la création de la salle. Le client garde sa place.",
+        "TAKE_FAILED_MOVE_CLIENT": "La prise en charge a échoué lors du déplacement du client dans la salle. Une salle vide est supprimée ; le client garde sa place.",
+        "TAKE_FAILED_MOVE_SUPPORTER": "La prise en charge a échoué lors du déplacement du support. Le client a été replacé dans le canal d'attente et garde sa place.",
+        "TAKE_FAILED_NOT_BACK": "La prise en charge a échoué et le client n'a pas pu être replacé. Utilisez « Ramener » sur le cas.",
+        "NOTHING_TO_BRING_BACK": "Il n'y a rien à ramener pour ce cas."
       },
       "settings": {
         "open": "Paramètres",
@@ -2400,6 +2624,7 @@
       "dontShowAgain": "Ne pas afficher ceci à l’ouverture d’un flux",
       "gotIt": "Compris",
       "flowSaved": "Flux enregistré",
+      "approvalRevoked": "Flow enregistré. Ce flow importé fait maintenant autre chose : son approbation a été retirée et il a été désactivé ; un admin doit le réactiver.",
       "templateConfig": "Configurer le modèle",      "flowSaveFailed": "Échec de l’enregistrement du flux",
       "placeholderReference": "Référence des placeholders",
       "save": "Enregistrer",
@@ -2472,10 +2697,16 @@
         },
         "triggerWebhook": {
           "webhookPathLabel": "Chemin du webhook",
+          "signedExampleLabel": "Exemple d’appel, signé",
+          "requireSignatureHint": "Protège contre les appels répétés : l’appelant envoie X-Webhook-Timestamp (secondes Unix) et X-Webhook-Signature = sha256= suivi du HMAC-SHA256 de « <horodatage>.<contenu> », avec le secret comme clé. Seuls les appels dont l’horodatage s’écarte d’au plus 5 minutes sont acceptés, et chaque signature une seule fois. Activé, le secret seul ne suffit plus ; les appels signés sont acceptés aussi quand il est désactivé.",
+          "requireSignatureLabel": "Exiger une signature",
+          "querySecretWarning_other": "Ce flux a été appelé {{count}} fois avec ?secret= dans l’adresse, dernier appel le {{date}}. Passez les appelants à l’en-tête X-Webhook-Secret : les adresses finissent dans les journaux d’accès.",
+          "querySecretWarning_one": "Ce flux a été appelé {{count}} fois avec ?secret= dans l’adresse, dernier appel le {{date}}. Passez l’appelant à l’en-tête X-Webhook-Secret : les adresses finissent dans les journaux d’accès.",
+          "exampleLabel": "Exemple d’appel",
           "httpMethodLabel": "Méthode HTTP",
-          "secretLabel": "Secret (facultatif)",
-          "secretPlaceholder": "Laissez vide pour aucune auth",
-          "secretHint": "Validé via l’en-tête X-Webhook-Secret ou le paramètre de requête ?secret="
+          "secretLabel": "Secret",
+          "secretPlaceholder": "Obligatoire : sans secret, le webhook ne se déclenche jamais",
+          "secretHint": "L’appelant envoie le secret dans l’en-tête X-Webhook-Secret."
         },
         "triggerCommand": {
           "listenChannelIdLabel": "ID du salon d’écoute (facultatif)",
@@ -2690,6 +2921,52 @@
       "permissionOverview": "Vue d’ensemble des permissions",
       "why": {
         "tab": "Pourquoi ?",
+        "whatif": {
+          "title": "Et si",
+          "explanation": "Planifiez des modifications pour voir la réponse avant de les enregistrer : avant et après côte à côte. Seules l’appartenance aux groupes de serveur et les valeurs des groupes de serveur et des clients sont prises en compte, pas les groupes de canal ni les permissions de canal. Rien n’est modifié sur le serveur.",
+          "kind": "Modification",
+          "kinds": { "add": "Ajouter au groupe de serveur", "remove": "Retirer du groupe de serveur", "group-perm": "Valeur d’un groupe de serveur", "client-perm": "Valeur d’un client" },
+          "who": "Concerne",
+          "permission": "Permission",
+          "value": "Valeur",
+          "removeValue": "Supprimer la valeur",
+          "negated": "Négation",
+          "skip": "Ignorer",
+          "add": "Ajouter la modification",
+          "planned": "Modifications prévues",
+          "removeChange": "Retirer la modification prévue {{n}}",
+          "missing": { "group": "Choisissez un groupe de serveur.", "permission": "Saisissez un nom de permission de la liste.", "value": "Saisissez un nombre entier ou cochez « Supprimer la valeur ».", "tooMany": "{{max}} modifications au maximum." },
+          "describe": {
+            "add": "Ajouter {{client}} à {{group}}",
+            "remove": "Retirer {{client}} de {{group}}",
+            "group-set": "{{group}} : {{perm}} = {{value}}",
+            "group-unset": "{{group}} : supprimer {{perm}}",
+            "client-set": "{{client}} (permission client) : {{perm}} = {{value}}",
+            "client-unset": "{{client}} (permission client) : supprimer {{perm}}"
+          },
+          "temporary": "appartenance temporaire jusqu’au {{until}}",
+          "fromEditor": {
+            "group": "Pourquoi ? avec ces modifications",
+            "actor": "Pourquoi ? avec ces modifications (comme client qui agit)",
+            "target": "Pourquoi ? avec ces modifications (comme cible)",
+            "note": "Repris de l’éditeur. Les modifications n’y sont pas encore enregistrées."
+          },
+          "check": "Comparer avec {{count}} modification(s) prévue(s)",
+          "nothingChanged": "Aperçu : rien n’a été modifié sur le serveur.",
+          "verdictChanged": "La réponse change : {{before}} → {{after}}.",
+          "verdictSame": "La réponse reste : {{verdict}}.",
+          "groupsChange": "Groupes de serveur de {{client}} : {{before}} → {{after}}",
+          "before": "Maintenant",
+          "after": "Avec les modifications prévues",
+          "error": {
+            "conflict": "La modification {{n}} touche la même entrée qu’une précédente. N’en gardez qu’une.",
+            "already-member": "Modification {{n}} : le client est déjà dans ce groupe.",
+            "not-member": "Modification {{n}} : le client n’est pas dans ce groupe.",
+            "default-group": "Modification {{n}} : le groupe par défaut est attribué et retiré par TeamSpeak lui-même, il ne peut pas être planifié.",
+            "invalid-group": "Modification {{n}} : ce groupe ne peut pas recevoir de membres (groupe modèle ou de requête, ou il n’existe plus).",
+            "too-many": "Trop de modifications prévues."
+          }
+        },
         "title": "Pourquoi un client peut-il (ou non) faire cela ?",
         "explanation": "Choisissez qui agit, l’action et la cible. La réponse est calculée à partir des mêmes données que la vue d’ensemble des permissions, selon les vérifications que TeamSpeak fait pour cette action, et indique d’où vient chaque valeur. Rien n’est modifié ici ; utilisez l’éditeur pour cela.",
         "actor": "Qui agit",
@@ -2993,7 +3270,7 @@
       "botPlayerCard": {
         "playerWidget": "Widget lecteur",
         "playSongEllipsis": "Lire un morceau...",
-        "live": "EN DIRECT",
+        "live": "LIVE",
         "stop": "Arrêter",
         "playEllipsis": "Lire...",
         "stopAudio": "Arrêter l’audio",
@@ -3255,6 +3532,21 @@
     }
   },
   "components": {
+    "live": {
+      "openSettings": "Paramètres → Streaming",
+      "thumbnailAlt": "Aperçu de la diffusion en direct",
+      "replayHint": "Relance la chaîne - elle doit être en direct maintenant",
+      "errors": {
+        "disabled": "Les diffusions en direct sont désactivées. Un administrateur peut les autoriser dans Paramètres → Streaming.",
+        "videoDisabled": "Les diffusions en direct en vidéo sont désactivées. Un administrateur peut les autoriser dans Paramètres → Streaming.",
+        "offline": "La chaîne n'est pas en direct pour le moment."
+      },
+      "ended": {
+        "offline": "Diffusion en direct terminée : la chaîne est passée hors ligne",
+        "time_limit": "Diffusion en direct arrêtée : la limite de temps des diffusions en direct est atteinte",
+        "unreachable": "Diffusion en direct terminée : elle a été interrompue et n’a plus pu être jointe"
+      }
+    },
     "flowTemplates": {
       "import": "Importer",
       "importTitle": "Importer un modèle de flux",
@@ -3492,7 +3784,7 @@
       "mute": "Couper le son",
       "connecting": "Connexion au flux...",
       "retry": "Réessayer",
-      "live": "EN DIRECT"
+      "live": "LIVE"
     },
     "videoStreamTab": {
       "title": "Flux vidéo",

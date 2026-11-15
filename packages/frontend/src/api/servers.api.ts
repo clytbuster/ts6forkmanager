@@ -1,5 +1,5 @@
 import api from './client';
-import type { ConnectionDiagnosis, DiagnosisRequest } from '@ts6/common';
+import type { ConnectionDiagnosis, DiagnosisRequest, SnapshotBackupSource, SnapshotCompareRequest, SnapshotCompareResult, SnapshotRestoreRequest, SnapshotRestoreResult, VirtualServerDeleteResult } from '@ts6/common';
 
 export const serversApi = {
   list: () => api.get('/servers').then((r) => r.data),
@@ -28,12 +28,19 @@ export const serversApi = {
     api.post(`/servers/${configId}/virtual-servers/${sid}/start`).then((r) => r.data),
   stopVirtual: (configId: number, sid: number) =>
     api.post(`/servers/${configId}/virtual-servers/${sid}/stop`).then((r) => r.data),
-  deleteVirtual: (configId: number, sid: number) =>
-    api.delete(`/servers/${configId}/virtual-servers/${sid}`),
+  /** `skipBackup`: go on after the backup before it failed (R9). */
+  deleteVirtual: (configId: number, sid: number, skipBackup = false): Promise<VirtualServerDeleteResult> =>
+    api.delete(`/servers/${configId}/virtual-servers/${sid}`, skipBackup ? { data: { skipBackup } } : undefined).then((r) => r.data),
   createSnapshot: (configId: number, sid: number) =>
     api.post(`/servers/${configId}/virtual-servers/${sid}/snapshot`).then((r) => r.data),
   deploySnapshot: (configId: number, sid: number, data: any) =>
     api.post(`/servers/${configId}/virtual-servers/${sid}/snapshot/deploy`, data).then((r) => r.data),
+  snapshotCompareSources: (configId: number, sid: number): Promise<SnapshotBackupSource[]> =>
+    api.get(`/servers/${configId}/virtual-servers/${sid}/snapshot/compare-sources`).then((r) => r.data),
+  compareSnapshot: (configId: number, sid: number, body: SnapshotCompareRequest): Promise<SnapshotCompareResult> =>
+    api.post(`/servers/${configId}/virtual-servers/${sid}/snapshot/compare`, body).then((r) => r.data),
+  restoreSnapshotGroups: (configId: number, sid: number, body: SnapshotRestoreRequest): Promise<SnapshotRestoreResult> =>
+    api.post(`/servers/${configId}/virtual-servers/${sid}/snapshot/restore-groups`, body).then((r) => r.data),
   getConnectionInfo: (configId: number, sid: number) =>
     api.get(`/servers/${configId}/virtual-servers/${sid}/connection-info`).then((r) => r.data),
   sendServerMessage: (configId: number, sid: number, msg: string) =>

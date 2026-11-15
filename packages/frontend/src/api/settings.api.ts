@@ -81,6 +81,12 @@ export const settingsApi = {
   setBotLogSettings: (config: BotLogSettings): Promise<BotLogSettingsResponse> =>
     api.put('/settings/bot-logs', config).then((r) => r.data),
 
+  getWebhookSettings: (): Promise<WebhookSettingsResponse> =>
+    api.get('/settings/webhooks').then((r) => r.data),
+
+  setWebhookSettings: (values: WebhookSettings): Promise<WebhookSettingsResponse> =>
+    api.put('/settings/webhooks', values).then((r) => r.data),
+
   getWebguiTheme: (): Promise<{ preset: AccentPreset }> =>
     api.get('/settings/webgui-theme').then((r) => r.data),
 
@@ -214,12 +220,14 @@ export interface StreamDefaults {
   maxVideoMinutes: number;
   /** Whether a music bot plays a channel that is live right now (sound only). */
   liveAudioEnabled: boolean;
+  /** Whether a video stream plays a channel that is live right now. */
+  liveVideoEnabled: boolean;
   /** Longest a live session runs before the bot ends it, in minutes; 0 = no limit. */
   liveMaxMinutes: number;
 }
 
 /** The part of the stream defaults that describes the picture and sound of a stream being started. */
-export type StreamQuality = Omit<StreamDefaults, 'idleStopMinutes' | 'maxVideoMinutes' | 'liveAudioEnabled' | 'liveMaxMinutes'>;
+export type StreamQuality = Omit<StreamDefaults, 'idleStopMinutes' | 'maxVideoMinutes' | 'liveAudioEnabled' | 'liveVideoEnabled' | 'liveMaxMinutes'>;
 
 export interface StreamPreset {
   /** The name !stream accepts, e.g. `720p`. */
@@ -260,6 +268,26 @@ export interface BotLogSettings {
   maxRows: number;
   /** Executions of one flow that may run at once; further triggers are dropped. */
   maxConcurrentPerFlow: number;
+  /** Longest total runtime of one execution in minutes; 0 = no limit. */
+  maxRuntimeMinutes: number;
+}
+
+/** Limits on incoming webhook calls, checked before the body is read. */
+export interface WebhookSettings {
+  bodyLimitKb: number;
+  /** Calls with a matching secret per address and minute. */
+  validPerMinute: number;
+  /** Calls to an unknown path or with a wrong secret per address and minute. */
+  failedPerMinute: number;
+  /** Whether a secret sent as ?secret= in the address is still accepted. */
+  allowQuerySecret: boolean;
+}
+
+export type WebhookLimit = 'bodyLimitKb' | 'validPerMinute' | 'failedPerMinute';
+
+export interface WebhookSettingsResponse extends WebhookSettings {
+  defaults: WebhookSettings;
+  bounds: Record<WebhookLimit, { min: number; max: number }>;
 }
 
 export interface BotLogSettingsResponse extends BotLogSettings {
@@ -267,6 +295,7 @@ export interface BotLogSettingsResponse extends BotLogSettings {
   bounds: {
     retentionMin: number; retentionMax: number; maxRowsMin: number; maxRowsMax: number;
     maxConcurrentMin: number; maxConcurrentMax: number;
+    maxRuntimeMin: number; maxRuntimeMax: number;
   };
   /** Current row counts, for the panel. */
   executionCount: number;
