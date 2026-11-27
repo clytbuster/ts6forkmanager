@@ -32,7 +32,7 @@ import { useSetWebguiTheme, useSetWebguiBaseTheme, useSetWebguiDesign } from '@/
 import { usePublicConfig, useSetPrivacyNotice } from '@/hooks/use-public-config';
 import { useUiStore } from '@/stores/ui.store';
 import { useLanguagePreference } from '@/hooks/use-language';
-import { SUPPORTED_LANGUAGES, nativeLanguageName } from '@/lib/i18n';
+import i18n, { SUPPORTED_LANGUAGES, nativeLanguageName } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { settingsTabsFor, resolveSettingsTab } from '@/lib/settings-tabs';
 import { useSearchParams } from 'react-router';
@@ -361,21 +361,21 @@ function BaseThemeSwatchPicker({ value, onChange, disabled }: { value: BaseTheme
         <div key={group.title} className="space-y-1.5">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{group.title}</p>
           <div className="flex flex-wrap gap-2">
-            {group.items.map((t) => (
+            {group.items.map((p) => (
               <button
-                key={t.value}
+                key={p.value}
                 type="button"
                 disabled={disabled}
-                onClick={() => onChange(t.value)}
-                title={t.description}
+                onClick={() => onChange(p.value)}
+                title={t(`pages.settings.webgui.themeDescriptions.${p.value}`)}
                 className={cn(
                   'flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors',
-                  value === t.value ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+                  value === p.value ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:text-foreground',
                   disabled && 'opacity-50 cursor-not-allowed',
                 )}
               >
-                <span className="h-3 w-3 rounded-full border border-border/50" style={{ background: t.preview }} />
-                {t.label}
+                <span className="h-3 w-3 rounded-full border border-border/50" style={{ background: p.preview }} />
+                {p.label}
               </button>
             ))}
           </div>
@@ -904,7 +904,7 @@ function BotIdentityDialog({ server, onClose }: { server: any; onClose: () => vo
           )}
           <div>
             <Label className="text-xs">{t('pages.settings.botIdentity.displayNameLabel')}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Hausmeister" autoFocus />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('pages.settings.botIdentity.displayNamePlaceholder')} autoFocus />
           </div>
         </div>
         <DialogFooter>
@@ -1077,7 +1077,7 @@ function UsersTab() {
                     />
                   </td>
                   <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : t('pages.settings.users.never')}
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(i18n.language) : t('pages.settings.users.never')}
                   </td>
                   <td className="px-3 py-2.5 text-right">
                     <div className="inline-flex items-center gap-0.5">
@@ -1386,8 +1386,8 @@ function SessionsDialog({ userId, username, isSelf, onClose }: { userId: number;
             {sessions.map((s) => (
               <div key={s.id} className="flex items-center justify-between gap-4 py-1.5 border-b border-border last:border-0">
                 <div>
-                  <p className="text-xs">{t('pages.settings.sessions.signedIn', { date: new Date(s.createdAt).toLocaleString() })}</p>
-                  <p className="text-[11px] text-muted-foreground">{t('pages.settings.sessions.expires', { date: new Date(s.expiresAt).toLocaleString() })}</p>
+                  <p className="text-xs">{t('pages.settings.sessions.signedIn', { date: new Date(s.createdAt).toLocaleString(i18n.language) })}</p>
+                  <p className="text-[11px] text-muted-foreground">{t('pages.settings.sessions.expires', { date: new Date(s.expiresAt).toLocaleString(i18n.language) })}</p>
                 </div>
                 <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" disabled={revokeOne.isPending} onClick={() => revokeOne.mutate(s.id)}>
                   {t('pages.settings.sessions.revoke')}
@@ -1667,7 +1667,7 @@ function StreamingTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground">
-            What <code className="text-[11px]">!stream &lt;url&gt;</code> {t('pages.settings.streaming.descriptionUsage', { names: data.presets.map((p) => p.name).join(', ') })}
+            {t('pages.settings.streaming.descriptionLead')} <code className="text-[11px]">!stream &lt;url&gt;</code> {t('pages.settings.streaming.descriptionUsage', { names: data.presets.map((p) => p.name).join(', ') })}
           </p>
 
           <div className="space-y-2">
@@ -2264,7 +2264,7 @@ function UpdateStatusTab() {
           })}
 
           <p className="text-[11px] text-muted-foreground pt-3">
-            {data.checkedAt ? t('pages.settings.updateStatus.lastChecked', { date: new Date(data.checkedAt).toLocaleString() }) : t('pages.settings.updateStatus.notCheckedYet')}
+            {data.checkedAt ? t('pages.settings.updateStatus.lastChecked', { date: new Date(data.checkedAt).toLocaleString(i18n.language) }) : t('pages.settings.updateStatus.notCheckedYet')}
           </p>
         </CardContent>
       </Card>
